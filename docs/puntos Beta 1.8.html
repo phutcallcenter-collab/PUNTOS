@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Control de Asistencia - Call Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+    
+    :root {
+      /* Tema Oscuro por defecto */
+      --bg1: #0b1220;
+      --bg2: #0f1724;
+      --text-main: #e6eef8;
+      --text-secondary: rgba(230,238,248,0.7);
+      --card-bg-light: rgba(255,255,255,0.05);
+      --glass-border: rgba(255,255,255,0.08);
+      --input-bg: rgba(255,255,255,0.05);
+      --table-border: rgba(255,255,255,0.05);
+      --accent: #6366f1;
+      --danger: #ef4444;
+      --success: #10b981;
+      --alert-bg: #ef4444;
+    }
+    
+    /* Tema Claro - Se activa con la clase .light-mode */
+    .light-mode {
+      --bg1: #f8fafc;
+      --bg2: #e2e8f0;
+      --text-main: #0f172a;
+      --text-secondary: #475569;
+      --card-bg-light: #ffffff;
+      --glass-border: #cbd5e1;
+      --input-bg: #f1f5f9;
+      --table-border: #f1f5f9;
+      --accent: #4338ca; /* Indigo 700 */
+      --danger: #dc2626;
+      --success: #059669;
+      --alert-bg: #f87171;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    html, body { height: 100%; }
+    
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(160deg, var(--bg1) 0%, var(--bg2) 100%);
+      color: var(--text-main);
+      padding: 20px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .glass {
+      /* Adaptar el fondo y el borde según el tema */
+      background: var(--card-bg-light); 
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 30px rgba(2,6,23,0.3);
+      border-radius: 12px;
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+    
+    .light-mode .glass {
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .toast {
+      position: fixed;
+      right: 20px;
+      top: 20px;
+      z-index: 1000;
+      padding: 14px 18px;
+      border-radius: 10px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      min-width: 250px;
+      transform: translateY(-20px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      color: white; /* El toast siempre será blanco sobre fondo de color */
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+    
+    .toast.show { 
+      opacity: 1; 
+      transform: translateY(0); 
+      pointer-events: auto; 
+    }
+
+    .custom-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+    .custom-scroll::-webkit-scrollbar-track { background: var(--input-bg); border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      background: rgba(2,6,23,0.8);
+      backdrop-filter: blur(4px);
+    }
+    
+    .modal-backdrop.show { display: flex; }
+
+    .pill {
+      background: var(--input-bg);
+      border: 1px solid var(--glass-border);
+      color: var(--text-secondary);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    
+    .pill:hover {
+      background: var(--glass-border);
+      border-color: var(--accent);
+      color: var(--text-main);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent));
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(99,102,241,0.4);
+    }
+
+    input, select {
+      background: var(--input-bg);
+      border: 1px solid var(--glass-border);
+      color: var(--text-main);
+      padding: 8px 12px;
+      border-radius: 8px;
+      outline: none;
+      transition: all 0.2s;
+    }
+    
+    input:focus, select:focus {
+      border-color: var(--accent);
+      background: var(--glass-border);
+    }
+
+    .tab-active {
+      background: color-mix(in srgb, var(--accent) 20%, transparent);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .weekend { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+    
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--table-border); }
+    th { font-weight: 600; color: var(--text-secondary); }
+
+    .stat-card {
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+      border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+      padding: 16px;
+      border-radius: 10px;
+    }
+
+    .alert-badge {
+      background: var(--alert-bg);
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: white;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .rep-card {
+      transition: all 0.2s;
+    }
+    
+    .rep-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 30%, transparent);
+    }
+
+    .incident-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      /* Los colores específicos de los badges se mantienen, pero se hacen un poco más suaves en tema claro si es necesario */
+    }
+
+    /* --- Badges Punitivos (Generan Puntos) --- */
+    .badge-tardanza { background: rgba(59,130,246,0.2); color: #60a5fa; } /* Blue - Tardanza */
+    .badge-ausencia { background: rgba(239,68,68,0.2); color: #f87171; } /* Red - Ausencia */
+    .badge-error { background: rgba(251,191,36,0.2); color: #fbbf24; } /* Yellow - Error */
+    .badge-otro-puntos { background: rgba(156,163,175,0.2); color: #9ca3af; } /* Gray - Otro con Puntos */
+
+    /* --- Badges Informativos (Cero Puntos) --- */
+    .badge-vacaciones { background: rgba(20, 184, 166, 0.2); color: #2dd4bf; } /* Teal - VAC */
+    .badge-licencia { background: rgba(249, 115, 22, 0.2); color: #fb923c; } /* Orange - LIC */
+    .badge-cambioturno { background: rgba(168, 85, 247, 0.2); color: #c084fc; } /* Purple - CAM */
+    .badge-permiso { background: rgba(100, 116, 139, 0.2); color: #94a3b8; } /* Slate - PERM */
+    .badge-dialibre { background: rgba(236, 72, 153, 0.2); color: #ec4899; } /* Pink - DL */
+    .badge-cumpleanos { background: rgba(234, 179, 8, 0.2); color: #facc15; } /* Amber - CUM */
+    .badge-despachado { background: rgba(96, 165, 250, 0.2); color: #60a5fa; } /* Light Blue - DESP */
+    .badge-off { background: rgba(124, 58, 237, 0.2); color: #a78bfa; } /* Indigo - OFF */
+
+  </style>
+</head>
+<body>
+
+  <div id="toastContainer"></div>
+
+  <header class="glass p-6 mb-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold mb-2">Control de Asistencia</h1>
+        <p class="text-sm" style="color: var(--text-secondary)">
+          Sistema de alertas: 3 ausencias, 2 errores o 3 tardanzas (lo que ocurra primero)
+        </p>
+      </div>
+      <div class="flex items-center gap-3">
+        <!-- Nuevo Botón de Tema -->
+        <button id="btnToggleTheme" class="pill flex items-center gap-2">
+          <i id="themeIcon" data-lucide="sun" class="w-4 h-4"></i>
+          <span id="themeText">Claro</span>
+        </button>
+        
+        <button id="btnImport" class="pill flex items-center gap-2">
+          <i data-lucide="upload" class="w-4 h-4"></i>
+          Importar
+        </button>
+        <button id="btnExport" class="pill flex items-center gap-2">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          Exportar
+        </button>
+        <button id="btnAddRep" class="btn-primary flex items-center gap-2">
+          <i data-lucide="user-plus" class="w-4 h-4"></i>
+          Añadir Representante
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="flex gap-3 mb-6">
+    <button class="pill tab-btn tab-active" data-tab="diario">
+      <i data-lucide="calendar-days" class="w-4 h-4 inline"></i> Registro Diario
+    </button>
+    <button class="pill tab-btn" data-tab="mensual">
+      <i data-lucide="bar-chart-3" class="w-4 h-4 inline"></i> Vista Mensual
+    </button>
+    <button class="pill tab-btn" data-tab="historial">
+      <i data-lucide="search" class="w-4 h-4 inline"></i> Historial
+    </button>
+  </nav>
+
+  <div class="grid lg:grid-cols-4 gap-6">
+
+    <aside class="lg:col-span-1">
+      <div class="glass p-4">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-semibold text-lg">Representantes</h2>
+          <span id="repCount" class="text-sm" style="color: var(--text-secondary)">0</span>
+        </div>
+
+        <input 
+          id="quickSearch" 
+          type="text"
+          placeholder="Buscar representante..." 
+          class="w-full mb-4"
+        />
+
+        <div id="repList" class="space-y-2 custom-scroll" style="max-height: 65vh; overflow-y: auto;">
+        </div>
+      </div>
+    </aside>
+
+    <main class="lg:col-span-3">
+
+      <section id="tab-diario" class="tab-content">
+        <div class="glass p-6">
+          <h2 class="text-xl font-bold mb-4">Registro Diario de Incidencias</h2>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            
+            <!-- Columna 1: Fecha Inicio -->
+            <div>
+              <label class="block text-sm mb-2" style="color: var(--text-secondary)">Fecha Inicio</label>
+              <input id="diarioFecha" type="date" class="w-full" />
+            </div>
+            
+            <!-- Columna 2: Representante -->
+            <div>
+              <label class="block text-sm mb-2" style="color: var(--text-secondary)">Representante</label>
+              <select id="diarioSelectRep" class="w-full">
+                <option value="">Seleccionar...</option>
+              </select>
+            </div>
+            
+            <!-- Columna 3: Tipo -->
+            <div>
+              <label class="block text-sm mb-2" style="color: var(--text-secondary)">Tipo</label>
+              <select id="diarioTipo" class="w-full"></select>
+            </div>
+            
+            <!-- Columna 4: Cantidad / Fecha Fin -->
+            <div id="cantidadContainer">
+              <label class="block text-sm mb-2" style="color: var(--text-secondary)">Cantidad (Veces)</label>
+              <input id="diarioCantidad" type="number" min="1" value="1" class="w-full" />
+            </div>
+            
+            <div id="fechaFinContainer" style="display: none;">
+              <label class="block text-sm mb-2" style="color: var(--text-secondary)">Fecha Fin</label>
+              <input id="diarioFechaFin" type="date" class="w-full" />
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="block text-sm mb-2" style="color: var(--text-secondary)">Comentario (opcional)</label>
+            <input id="diarioComentario" type="text" placeholder="Agregar nota..." class="w-full" />
+          </div>
+
+          <button id="btnAgregarIncidencia" class="btn-primary w-full flex items-center justify-center gap-2">
+            <i data-lucide="check-circle" class="w-5 h-5"></i>
+            Registrar Incidencia
+          </button>
+
+          <hr class="my-6" style="border-color: var(--glass-border)" />
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div>
+              <h3 class="font-semibold mb-3">Resumen del Día</h3>
+              <div id="resumenDia" class="space-y-3 custom-scroll" style="max-height: 400px; overflow-y: auto;">
+                <p class="text-sm" style="color: var(--text-secondary)">Sin incidencias registradas</p>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="font-semibold mb-3">Buscar en el Día</h3>
+              <input id="buscarDia" type="text" placeholder="Buscar por nombre o tipo..." class="w-full mb-3" />
+              
+              <div class="stat-card mt-4">
+                <div class="text-sm mb-1" style="color: var(--text-secondary)">Total Incidencias (Punitivas + Info)</div>
+                <div id="totalDia" class="text-3xl font-bold">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-mensual" class="tab-content hidden">
+        <div class="glass p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold">Vista Mensual</h2>
+            <div class="flex items-center gap-3">
+              <select id="mensualMes" class="pill"></select>
+              <input id="mensualAno" type="number" class="pill" style="width: 100px" />
+            </div>
+          </div>
+
+          <div class="grid lg:grid-cols-3 gap-6 mb-6">
+            <div class="lg:col-span-2 glass p-4">
+              <h3 class="font-semibold mb-4">Tendencia Diaria (Total Incidencias)</h3>
+              <canvas id="chartMensual" height="100"></canvas>
+            </div>
+
+            <div class="glass p-4">
+              <h3 class="font-semibold mb-4">Métricas Administrativas y Alertas</h3>
+              <div id="monthlyStatsSummary" class="space-y-2">
+                <p class="text-sm" style="color: var(--text-secondary)">Calculando...</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass p-4">
+            <h3 class="font-semibold mb-4">Totales por Representante</h3>
+            <div id="tablaTotales" class="overflow-x-auto custom-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Turno</th>
+                    <th class="text-center">Ausencias</th>
+                    <th class="text-center">Tardanzas</th>
+                    <th class="text-center">Errores</th>
+                    <th class="text-center" style="background: rgba(20, 184, 166, 0.1);">VAC</th>
+                    <th class="text-center" style="background: rgba(100, 116, 139, 0.1);">PERM</th>
+                    <th class="text-center" style="background: rgba(236, 72, 153, 0.1);">DL</th>
+                    <th class="text-center">Puntos</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaTotalesBody">
+                  <tr>
+                    <td colspan="10" class="text-center" style="color: var(--text-secondary)">
+                      Sin datos para este mes
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-historial" class="tab-content hidden">
+        <div class="glass p-6">
+          <h2 class="text-xl font-bold mb-4">Búsqueda en Historial</h2>
+          
+          <div class="flex gap-3 mb-6 flex-wrap">
+            <input 
+              id="histSearch" 
+              type="text"
+              placeholder="Buscar por nombre, fecha (YYYY-MM-DD) o comentario..." 
+              class="flex-1 min-w-[200px]"
+            />
+            <select id="histTipoFilter" class="pill min-w-[150px]">
+              <option value="">Todo Tipo</option>
+            </select>
+            <button id="btnHistBuscar" class="btn-primary">
+              <i data-lucide="search" class="w-4 h-4"></i>
+            </button>
+            <button id="btnHistLimpiar" class="pill">Limpiar</button>
+          </div>
+
+          <div id="histResultados" class="space-y-3 custom-scroll" style="max-height: 500px; overflow-y: auto;">
+            <p class="text-sm" style="color: var(--text-secondary)">
+              Ingrese un término de búsqueda
+            </p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div id="modalRep" class="modal-backdrop">
+    <div class="glass p-6" style="width: 90%; max-width: 500px;">
+      <div class="flex items-center justify-between mb-4">
+        <h3 id="modalRepTitle" class="text-xl font-bold">Añadir Representante</h3>
+        <button id="modalRepClose" class="pill" style="padding: 8px;">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm mb-2" style="color: var(--text-secondary)">Nombre</label>
+          <input id="repNombre" type="text" class="w-full" placeholder="Nombre completo" />
+        </div>
+        
+        <div>
+          <label class="block text-sm mb-2" style="color: var(--text-secondary)">Turno</label>
+          <select id="repTurno" class="w-full">
+            <option>Día</option>
+            <option>Noche</option>
+            <option>Mixto</option>
+            <option>Full-Time</option>
+          </select>
+        </div>
+
+        <div class="flex gap-3 justify-end pt-4">
+          <button id="modalRepCancel" class="pill">Cancelar</button>
+          <button id="modalRepSave" class="btn-primary">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    var reps = [];
+    var incidencias = {};
+    var editingRepId = null;
+    var chartMensual = null;
+    var isDarkMode = true; // Por defecto
+    var root = document.documentElement;
+
+    var ALERT_THRESHOLDS = { Ausencia: 3, Error: 2, Tardanza: 3 };
+
+    // Definición completa de tipos de incidencia
+    var INCIDENT_TYPES = {
+      // Punitive / Puntos > 0
+      Tardanza: { code: 'TARD', label: 'Tardanza (Puntos)', type: 'punitive', badge: 'badge-tardanza', mode: 'cantidad' },
+      Ausencia: { code: 'AUS', label: 'Ausencia (Puntos)', type: 'punitive', badge: 'badge-ausencia', mode: 'cantidad' },
+      Error: { code: 'ERR', label: 'Error (Puntos)', type: 'punitive', badge: 'badge-error', mode: 'cantidad' },
+      OtroPuntos: { code: 'OTROP', label: 'Otro (Puntos)', type: 'punitive', badge: 'badge-otro-puntos', mode: 'cantidad' },
+      
+      // Informational / Cero Puntos
+      Vacaciones: { code: 'VAC', label: 'Vacaciones (Rango)', type: 'info', badge: 'badge-vacaciones', mode: 'rango' }, // Modo rango
+      Licencia: { code: 'LIC', label: 'Licencia (Rango)', type: 'info', badge: 'badge-licencia', mode: 'rango' }, // Modo rango
+      CambioTurno: { code: 'CAM', label: 'Cambio de Turno (Veces)', type: 'info', badge: 'badge-cambioturno', mode: 'cantidad' },
+      Permiso: { code: 'PERM', label: 'Permiso (Veces)', type: 'info', badge: 'badge-permiso', mode: 'cantidad' },
+      DiaLibre: { code: 'DL', label: 'Día Libre (Rango)', type: 'info', badge: 'badge-dialibre', mode: 'rango' }, // Modo rango
+      Cumpleanos: { code: 'CUM', label: 'Cumpleaños (Día)', type: 'info', badge: 'badge-cumpleanos', mode: 'cantidad' },
+      Despachado: { code: 'DESP', label: 'Despachado (Veces)', type: 'info', badge: 'badge-despachado', mode: 'cantidad' },
+      Off: { code: 'OFF', label: 'Off/Descanso (Día)', type: 'info', badge: 'badge-off', mode: 'cantidad' },
+    };
+
+    var repListEl = document.getElementById('repList');
+    var repCountEl = document.getElementById('repCount');
+    var quickSearch = document.getElementById('quickSearch');
+    
+    var diarioFecha = document.getElementById('diarioFecha');
+    var diarioSelectRep = document.getElementById('diarioSelectRep');
+    var diarioTipo = document.getElementById('diarioTipo');
+    var diarioCantidad = document.getElementById('diarioCantidad');
+    var diarioComentario = document.getElementById('diarioComentario');
+    var btnAgregarIncidencia = document.getElementById('btnAgregarIncidencia');
+    var resumenDiaEl = document.getElementById('resumenDia');
+    var buscarDia = document.getElementById('buscarDia');
+    var totalDiaEl = document.getElementById('totalDia');
+    
+    // Elementos para manejo de rango
+    var cantidadContainer = document.getElementById('cantidadContainer');
+    var fechaFinContainer = document.getElementById('fechaFinContainer');
+    var diarioFechaFin = document.getElementById('diarioFechaFin');
+    
+
+    var mensualMes = document.getElementById('mensualMes');
+    var mensualAno = document.getElementById('mensualAno');
+    var chartMensualCtx = document.getElementById('chartMensual');
+    var tablaTotalesBody = document.getElementById('tablaTotalesBody');
+    var monthlyStatsSummaryEl = document.getElementById('monthlyStatsSummary');
+
+    var histSearch = document.getElementById('histSearch');
+    var histTipoFilter = document.getElementById('histTipoFilter');
+    var histResultados = document.getElementById('histResultados');
+    var btnHistBuscar = document.getElementById('btnHistBuscar');
+    var btnHistLimpiar = document.getElementById('btnHistLimpiar');
+
+    var modalRep = document.getElementById('modalRep');
+    var modalRepTitle = document.getElementById('modalRepTitle');
+    var repNombreInput = document.getElementById('repNombre');
+    var repTurnoInput = document.getElementById('repTurno');
+    var modalRepSave = document.getElementById('modalRepSave');
+    var modalRepClose = document.getElementById('modalRepClose');
+    var modalRepCancel = document.getElementById('modalRepCancel');
+
+    var btnAddRep = document.getElementById('btnAddRep');
+    var btnImport = document.getElementById('btnImport');
+    var btnExport = document.getElementById('btnExport');
+    
+    var btnToggleTheme = document.getElementById('btnToggleTheme');
+    var themeIcon = document.getElementById('themeIcon');
+    var themeText = document.getElementById('themeText');
+
+    var todayISO = new Date().toISOString().slice(0, 10);
+    diarioFecha.value = todayISO;
+    diarioFechaFin.value = todayISO; // Inicializar Fecha Fin
+    diarioFecha.min = todayISO; // Evitar rangos al pasado por defecto
+
+    var months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    
+    // Inicializar select de Meses
+    months.forEach(function(m, i) {
+      var opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = m;
+      mensualMes.appendChild(opt);
+    });
+    var now = new Date();
+    mensualMes.value = now.getMonth();
+    mensualAno.value = now.getFullYear();
+
+    // --- Lógica de Tema ---
+    function updateTheme() {
+        if (isDarkMode) {
+            root.classList.remove('light-mode');
+            themeIcon.setAttribute('data-lucide', 'sun');
+            themeText.textContent = 'Claro';
+        } else {
+            root.classList.add('light-mode');
+            themeIcon.setAttribute('data-lucide', 'moon');
+            themeText.textContent = 'Oscuro';
+        }
+        lucide.createIcons();
+        if (chartMensual) renderMonthlyOverview(); // Vuelve a dibujar el gráfico con los nuevos colores de ticks
+    }
+
+    btnToggleTheme.addEventListener('click', function() {
+        isDarkMode = !isDarkMode;
+        updateTheme();
+    });
+
+    // Inicializar el tema
+    updateTheme();
+
+
+    // Inicializar select de Tipos de Incidencia
+    function populateDiarioTipo() {
+      diarioTipo.innerHTML = '';
+      Object.keys(INCIDENT_TYPES).forEach(function(key) {
+        var opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = INCIDENT_TYPES[key].label;
+        diarioTipo.appendChild(opt);
+      });
+      diarioTipo.value = 'Tardanza'; // Set a default punitive type
+    }
+    
+    // Inicializar select de Filtro de Historial
+    function populateHistTipoFilter() {
+      histTipoFilter.innerHTML = '<option value="">Todo Tipo</option>';
+      Object.keys(INCIDENT_TYPES).forEach(function(key) {
+        var opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = INCIDENT_TYPES[key].label;
+        histTipoFilter.appendChild(opt);
+      });
+    }
+
+    // Lógica para alternar el campo Cantidad / Fecha Fin
+    function toggleInputMode() {
+        var selectedTypeKey = diarioTipo.value;
+        var mode = INCIDENT_TYPES[selectedTypeKey].mode;
+        
+        if (mode === 'rango') {
+            cantidadContainer.style.display = 'none';
+            fechaFinContainer.style.display = 'block';
+            // Sincronizar fecha fin con fecha inicio si es menor
+            if (new Date(diarioFechaFin.value) < new Date(diarioFecha.value)) {
+                diarioFechaFin.value = diarioFecha.value;
+            }
+            diarioFechaFin.min = diarioFecha.value;
+        } else {
+            cantidadContainer.style.display = 'block';
+            fechaFinContainer.style.display = 'none';
+            diarioFechaFin.min = ''; // Reset min attribute
+        }
+    }
+    
+    diarioTipo.addEventListener('change', toggleInputMode);
+    diarioFecha.addEventListener('change', toggleInputMode); // Si cambia la fecha inicio, actualiza la fecha fin mínima
+
+    function getBadgeClass(tipo) {
+      return INCIDENT_TYPES[tipo] ? INCIDENT_TYPES[tipo].badge : 'badge-otro-puntos';
+    }
+
+    function showToast(message, type) {
+      type = type || 'info';
+      var container = document.getElementById('toastContainer');
+      var toast = document.createElement('div');
+      toast.className = 'toast glass';
+      
+      var bgColor = type === 'error' 
+        ? 'linear-gradient(135deg, #ef4444, #dc2626)' 
+        : type === 'success'
+        ? 'linear-gradient(135deg, #10b981, #059669)'
+        : 'linear-gradient(135deg, #6366f1, #4f46e5)';
+      
+      toast.style.background = bgColor;
+      
+      var icon = type === 'error' ? 'x-circle' : type === 'success' ? 'check-circle' : 'info';
+      toast.innerHTML = '<i data-lucide="' + icon + '" class="w-5 h-5"></i><div>' + message + '</div>';
+      
+      container.appendChild(toast);
+      lucide.createIcons();
+      setTimeout(function() { toast.classList.add('show'); }, 10);
+      setTimeout(function() {
+        toast.classList.remove('show');
+        setTimeout(function() { toast.remove(); }, 350);
+      }, 3000);
+    }
+
+    function showModal(el) { el.classList.add('show'); }
+    function hideModal(el) { el.classList.remove('show'); }
+
+    function renderRepList() {
+      repListEl.innerHTML = '';
+      repCountEl.textContent = reps.length;
+      
+      reps.forEach(function(r, idx) {
+        var card = document.createElement('div');
+        card.className = 'glass p-3 rep-card';
+        card.innerHTML = '<div class="flex items-center justify-between mb-2"><div class="flex-1"><div class="font-semibold">' + r.nombre + '</div><div class="text-xs" style="color: var(--text-secondary)">' + r.turno + '</div></div><div class="flex gap-1"><button onclick="moveRep(\'' + r.id + '\', -1)" class="pill" style="padding: 4px 8px;" title="Subir"><i data-lucide="arrow-up" class="w-3 h-3"></i></button><button onclick="moveRep(\'' + r.id + '\', 1)" class="pill" style="padding: 4px 8px;" title="Bajar"><i data-lucide="arrow-down" class="w-3 h-3"></i></button></div></div><div class="flex gap-2"><button onclick="openEditRep(\'' + r.id + '\')" class="pill flex-1 text-xs"><i data-lucide="edit-2" class="w-3 h-3 inline"></i> Editar</button><button onclick="deleteRep(\'' + r.id + '\')" class="pill flex-1 text-xs" style="background: rgba(239,68,68,0.1); color: #ef4444;"><i data-lucide="trash-2" class="w-3 h-3 inline"></i> Eliminar</button></div>';
+        repListEl.appendChild(card);
+      });
+      
+      lucide.createIcons();
+      populateRepSelects();
+    }
+
+    function openNewRep() {
+      editingRepId = null;
+      modalRepTitle.textContent = 'Añadir Representante';
+      repNombreInput.value = '';
+      repTurnoInput.value = 'Día';
+      showModal(modalRep);
+    }
+
+    function openEditRep(id) {
+      var r = reps.find(function(x) { return x.id === id; });
+      if (!r) return;
+      editingRepId = id;
+      modalRepTitle.textContent = 'Editar Representante';
+      repNombreInput.value = r.nombre;
+      repTurnoInput.value = r.turno;
+      showModal(modalRep);
+    }
+
+    function saveRepFromModal() {
+      var name = repNombreInput.value.trim();
+      var turno = repTurnoInput.value;
+      
+      if (!name) {
+        showToast('El nombre es requerido', 'error');
+        return;
+      }
+
+      if (editingRepId) {
+        var idx = reps.findIndex(function(x) { return x.id === editingRepId; });
+        if (idx >= 0) {
+          reps[idx].nombre = name;
+          reps[idx].turno = turno;
+          showToast('Representante actualizado', 'success');
+        }
+      } else {
+        var id = 'r' + Date.now().toString(36);
+        reps.push({ id: id, nombre: name, turno: turno });
+        showToast('Representante agregado', 'success');
+      }
+
+      hideModal(modalRep);
+      renderAll();
+    }
+
+    function deleteRep(id) {
+      if (!confirm('¿Eliminar este representante y todas sus incidencias?')) return;
+      
+      reps = reps.filter(function(r) { return r.id !== id; });
+      
+      Object.keys(incidencias).forEach(function(date) {
+        incidencias[date] = incidencias[date].filter(function(i) { return i.repId !== id; });
+        if (incidencias[date].length === 0) delete incidencias[date];
+      });
+      
+      showToast('Representante eliminado', 'success');
+      renderAll();
+    }
+
+    function moveRep(id, dir) {
+      var idx = reps.findIndex(function(r) { return r.id === id; });
+      if (idx < 0) return;
+      
+      var newIndex = idx + dir;
+      if (newIndex < 0 || newIndex >= reps.length) return;
+      
+      var temp = reps[idx];
+      reps[idx] = reps[newIndex];
+      reps[newIndex] = temp;
+      renderRepList();
+    }
+
+    function populateRepSelects() {
+      diarioSelectRep.innerHTML = '<option value="">Seleccionar...</option>';
+      reps.forEach(function(r) {
+        var opt = document.createElement('option');
+        opt.value = r.id;
+        opt.textContent = r.nombre;
+        diarioSelectRep.appendChild(opt);
+      });
+    }
+
+    btnAgregarIncidencia.addEventListener('click', function() {
+      var fechaInicio = diarioFecha.value;
+      var repId = diarioSelectRep.value;
+      var tipo = diarioTipo.value; // Clave de INCIDENT_TYPES
+      var comentario = diarioComentario.value.trim();
+      var mode = INCIDENT_TYPES[tipo].mode;
+      
+      var fechasARegistrar = [];
+
+      if (!fechaInicio) {
+        showToast('Seleccione una fecha de inicio', 'error');
+        return;
+      }
+      
+      if (!repId) {
+        showToast('Seleccione un representante', 'error');
+        return;
+      }
+
+      if (mode === 'rango') {
+        var fechaFin = diarioFechaFin.value;
+        if (!fechaFin) {
+          showToast('Seleccione una fecha de fin', 'error');
+          return;
+        }
+
+        var start = new Date(fechaInicio + 'T00:00:00');
+        var end = new Date(fechaFin + 'T00:00:00');
+
+        if (start > end) {
+          showToast('La fecha de fin no puede ser anterior a la de inicio', 'error');
+          return;
+        }
+
+        var currentDate = start;
+        while (currentDate <= end) {
+          fechasARegistrar.push(currentDate.toISOString().slice(0, 10));
+          // Avanzar un día
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+        
+      } else {
+        // Modo 'cantidad' o por defecto, registra solo en la fecha de inicio
+        var cantidad = Number(diarioCantidad.value) || 1;
+        if (cantidad < 1) {
+          showToast('La cantidad debe ser 1 o más', 'error');
+          return;
+        }
+        // Para tipos de "cantidad" (Tardanza, Error, Permiso, etc.), solo se registra la fecha de inicio
+        fechasARegistrar.push({ date: fechaInicio, cantidad: cantidad });
+      }
+      
+      var totalRegistrados = 0;
+      var registroTS = new Date().toISOString();
+
+      if (mode === 'rango') {
+          // Para rango: cantidad es siempre 1 para cada día
+          fechasARegistrar.forEach(function(fecha) {
+              if (!incidencias[fecha]) incidencias[fecha] = [];
+              incidencias[fecha].push({
+                  repId: repId,
+                  tipo: tipo,
+                  cantidad: 1, // Se registra 1 día por fecha
+                  comentario: comentario + (fechasARegistrar.length > 1 ? ' (Día ' + (totalRegistrados + 1) + ' de ' + fechasARegistrar.length + ')' : ''),
+                  ts: registroTS
+              });
+              totalRegistrados++;
+          });
+      } else {
+          // Para cantidad: usa la cantidad ingresada en la fecha de inicio
+          var cantidad = Number(diarioCantidad.value) || 1;
+          if (!incidencias[fechaInicio]) incidencias[fechaInicio] = [];
+           incidencias[fechaInicio].push({
+              repId: repId,
+              tipo: tipo,
+              cantidad: cantidad,
+              comentario: comentario,
+              ts: registroTS
+          });
+          totalRegistrados = cantidad;
+      }
+
+      showToast('Incidencia registrada para ' + totalRegistrados + ' día(s)/vez(ces)', 'success');
+      diarioComentario.value = '';
+      diarioCantidad.value = 1;
+      // diarioFecha.value = todayISO; // No resetear fecha, para facilitar registros continuos
+      // diarioFechaFin.value = todayISO; // No resetear fecha
+      
+      renderDailyResumen();
+      renderMonthlyOverview();
+    });
+
+    function renderDailyResumen() {
+      var fecha = diarioFecha.value;
+      var list = incidencias[fecha] || [];
+      
+      var byRep = {};
+      list.forEach(function(i) {
+        if (!byRep[i.repId]) byRep[i.repId] = [];
+        byRep[i.repId].push(i);
+      });
+
+      resumenDiaEl.innerHTML = '';
+      totalDiaEl.textContent = list.reduce(function(sum, i) { return sum + i.cantidad; }, 0);
+
+      if (Object.keys(byRep).length === 0) {
+        resumenDiaEl.innerHTML = '<p class="text-sm" style="color: var(--text-secondary)">Sin incidencias registradas</p>';
+        return;
+      }
+
+      Object.entries(byRep).forEach(function(entry) {
+        var repId = entry[0];
+        var items = entry[1];
+        var r = reps.find(function(x) { return x.id === repId; });
+        var card = document.createElement('div');
+        card.className = 'glass p-3';
+        
+        var html = '<div class="font-semibold mb-2">' + (r ? r.nombre : repId) + '</div>';
+        items.forEach(function(it) {
+          var badgeClass = getBadgeClass(it.tipo);
+          var tipoLabel = INCIDENT_TYPES[it.tipo] ? INCIDENT_TYPES[it.tipo].label.split(' ')[0] : it.tipo; // Usar solo la palabra principal
+          html += '<div class="flex items-start gap-2 mb-2">';
+          html += '<span class="incident-badge ' + badgeClass + '">' + tipoLabel + '</span>';
+          html += '<div class="flex-1 text-sm" style="color: var(--text-secondary)">';
+          html += '×' + it.cantidad + (it.comentario ? ' · ' + it.comentario : '');
+          html += '</div></div>';
+        });
+        
+        card.innerHTML = html;
+        resumenDiaEl.appendChild(card);
+      });
+    }
+
+    buscarDia.addEventListener('input', function() {
+      var q = buscarDia.value.trim().toLowerCase();
+      var fecha = diarioFecha.value;
+      var list = incidencias[fecha] || [];
+      
+      if (!q) {
+        renderDailyResumen();
+        return;
+      }
+
+      var filtered = list.filter(function(i) {
+        var r = reps.find(function(x) { return x.id === i.repId; });
+        return (r && r.nombre.toLowerCase().includes(q)) || 
+               i.tipo.toLowerCase().includes(q) || 
+               (i.comentario || '').toLowerCase().includes(q);
+      });
+
+      var byRep = {};
+      filtered.forEach(function(i) {
+        if (!byRep[i.repId]) byRep[i.repId] = [];
+        byRep[i.repId].push(i);
+      });
+
+      resumenDiaEl.innerHTML = '';
+
+      if (Object.keys(byRep).length === 0) {
+        resumenDiaEl.innerHTML = '<p class="text-sm" style="color: var(--text-secondary)">Sin coincidencias</p>';
+        return;
+      }
+
+      Object.entries(byRep).forEach(function(entry) {
+        var repId = entry[0];
+        var items = entry[1];
+        var r = reps.find(function(x) { return x.id === repId; });
+        var card = document.createElement('div');
+        card.className = 'glass p-3';
+        
+        var html = '<div class="font-semibold mb-2">' + (r ? r.nombre : repId) + '</div>';
+        items.forEach(function(it) {
+          var badgeClass = getBadgeClass(it.tipo);
+          var tipoLabel = INCIDENT_TYPES[it.tipo] ? INCIDENT_TYPES[it.tipo].label.split(' ')[0] : it.tipo; // Usar solo la palabra principal
+          html += '<div class="flex items-start gap-2 mb-2">';
+          html += '<span class="incident-badge ' + badgeClass + '">' + tipoLabel + '</span>';
+          html += '<div class="flex-1 text-sm" style="color: var(--text-secondary)">';
+          html += '×' + it.cantidad + (it.comentario ? ' · ' + it.comentario : '');
+          html += '</div></div>';
+        });
+        
+        card.innerHTML = html;
+        resumenDiaEl.appendChild(card);
+      });
+    });
+
+    function calculatePoints(tipo, fecha) {
+      if (INCIDENT_TYPES[tipo] && INCIDENT_TYPES[tipo].type === 'info') {
+        return 0; // Incidencias informativas no generan puntos
+      }
+
+      // Lógica de puntos para incidencias punitivas
+      var d = new Date(fecha);
+      var dayOfWeek = d.getDay();
+      var isWeekend = dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0;
+
+      if (tipo === 'Tardanza') return isWeekend ? 3 : 2;
+      if (tipo === 'Ausencia') return isWeekend ? 6 : 3;
+      if (tipo === 'Error' || tipo === 'OtroPuntos') return 2;
+      return 0;
+    }
+
+    function renderMonthlyOverview() {
+      var monthIndex = Number(mensualMes.value);
+      var year = Number(mensualAno.value);
+      var days = new Date(year, monthIndex + 1, 0).getDate();
+
+      var dailyCounts = [];
+      for (var i = 0; i < days; i++) {
+        dailyCounts.push(0);
+      }
+      
+      var totals = {};
+      // Inicializar contadores administrativos clave
+      var monthlyAdminTotals = { Vacaciones: 0, Permiso: 0, DiaLibre: 0 };
+      
+      reps.forEach(function(r) {
+        totals[r.id] = { 
+          Ausencia: 0, 
+          Tardanza: 0, 
+          Error: 0, 
+          OtroPuntos: 0, 
+          Vacaciones: 0,
+          Permiso: 0,
+          DiaLibre: 0, 
+          puntos: 0 
+        };
+      });
+
+      Object.entries(incidencias).forEach(function(entry) {
+        var date = entry[0];
+        var arr = entry[1];
+        var d = new Date(date);
+        if (d.getFullYear() !== year || d.getMonth() !== monthIndex) return;
+
+        arr.forEach(function(item) {
+          var day = d.getDate();
+          dailyCounts[day - 1] += item.cantidad;
+
+          if (!totals[item.repId]) {
+            totals[item.repId] = { Ausencia: 0, Tardanza: 0, Error: 0, OtroPuntos: 0, Vacaciones: 0, Permiso: 0, DiaLibre: 0, puntos: 0 };
+          }
+
+          // Sumar por tipo de incidencia (tanto punitiva como informativa)
+          totals[item.repId][item.tipo] = (totals[item.repId][item.tipo] || 0) + item.cantidad;
+          
+          if (item.tipo === 'Vacaciones') monthlyAdminTotals.Vacaciones += item.cantidad;
+          if (item.tipo === 'Permiso') monthlyAdminTotals.Permiso += item.cantidad;
+          if (item.tipo === 'DiaLibre') monthlyAdminTotals.DiaLibre += item.cantidad;
+
+          var pts = calculatePoints(item.tipo, date) * item.cantidad;
+          totals[item.repId].puntos += pts;
+        });
+      });
+
+      var labels = [];
+      for (var i = 1; i <= days; i++) {
+        labels.push(i);
+      }
+      
+      if (chartMensual) chartMensual.destroy();
+      
+      // Determinar el color de texto para los ejes del gráfico según el tema
+      var tickColor = isDarkMode ? 'rgba(230,238,248,0.7)' : 'rgba(15,23,42,0.7)';
+      var gridColor = isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(15,23,42,0.05)';
+      var barColor = isDarkMode ? 'rgba(99, 102, 241, 0.8)' : 'rgba(67, 56, 202, 0.8)';
+
+
+      chartMensual = new Chart(chartMensualCtx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Incidencias',
+            data: dailyCounts,
+            backgroundColor: barColor,
+            borderColor: barColor.replace('0.8', '1'),
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: { 
+              beginAtZero: true,
+              ticks: { color: tickColor },
+              grid: { color: gridColor }
+            },
+            x: {
+              ticks: { color: tickColor },
+              grid: { color: gridColor }
+            }
+          }
+        }
+      });
+
+      tablaTotalesBody.innerHTML = '';
+      
+      if (Object.keys(totals).length === 0 || reps.length === 0) {
+        tablaTotalesBody.innerHTML = '<tr><td colspan="10" class="text-center" style="color: var(--text-secondary)">Sin datos para este mes</td></tr>';
+      } else {
+        Object.entries(totals).forEach(function(entry) {
+          var repId = entry[0];
+          var vals = entry[1];
+          var r = reps.find(function(x) { return x.id === repId; });
+          if (!r) return;
+
+          var hasAlert = checkAlert(vals);
+          var tr = document.createElement('tr');
+          
+          var vacCount = vals.Vacaciones || 0;
+          var permCount = vals.Permiso || 0;
+          var dlCount = vals.DiaLibre || 0; // Contar DL
+          
+          // Colores de texto adaptados al tema
+          var pointsColor = hasAlert ? 'var(--danger)' : 'var(--success)';
+          var vacColor = isDarkMode ? '#2dd4bf' : '#0d9488'; // Teal
+          var permColor = isDarkMode ? '#94a3b8' : '#64748b'; // Slate
+          var dlColor = isDarkMode ? '#ec4899' : '#e11d48'; // Pink
+
+          tr.innerHTML = '<td>' + r.nombre + '</td><td>' + r.turno + '</td>' + 
+                         '<td class="text-center">' + (vals.Ausencia || 0) + '</td>' + 
+                         '<td class="text-center">' + (vals.Tardanza || 0) + '</td>' + 
+                         '<td class="text-center">' + (vals.Error || 0) + '</td>' + 
+                         '<td class="text-center font-semibold" style="color: ' + vacColor + '">' + vacCount + '</td>' + // VAC
+                         '<td class="text-center font-semibold" style="color: ' + permColor + '">' + permCount + '</td>' + // PERM
+                         '<td class="text-center font-semibold" style="color: ' + dlColor + '">' + dlCount + '</td>' + // DL
+                         '<td class="text-center font-bold" style="color: ' + pointsColor + '">' + (vals.puntos || 0) + '</td>' + 
+                         '<td>' + (hasAlert ? '<span class="alert-badge">ALERTA</span>' : '<span class="text-xs" style="color: var(--text-secondary)">OK</span>') + '</td>';
+          
+          tablaTotalesBody.appendChild(tr);
+        });
+      }
+
+      // Renderizar el resumen administrativo y de alertas
+      var adminTextColor = isDarkMode ? '#2dd4bf' : '#0d9488';
+      var alertTextColor = isDarkMode ? '#f87171' : '#dc2626';
+      var alertBorder = isDarkMode ? 'border-red-500/30' : 'border-red-300';
+      var alertBg = isDarkMode ? 'bg-red-900/10' : 'bg-red-50/80';
+      
+      monthlyStatsSummaryEl.innerHTML = '<div class="space-y-3">';
+      monthlyStatsSummaryEl.innerHTML += '<h4 class="text-sm font-semibold mb-2" style="color: ' + adminTextColor + '">Días Administrativos Acumulados</h4>' +
+                                        '<div class="flex justify-between items-center"><span class="text-sm">Vacaciones (VAC):</span><span class="font-bold text-lg" style="color: ' + adminTextColor + '">' + monthlyAdminTotals.Vacaciones + '</span></div>' +
+                                        '<div class="flex justify-between items-center"><span class="text-sm">Permisos (PERM):</span><span class="font-bold text-lg" style="color: var(--text-secondary)">' + monthlyAdminTotals.Permiso + '</span></div>' +
+                                        '<div class="flex justify-between items-center"><span class="text-sm">Días Libres (DL):</span><span class="font-bold text-lg" style="color: var(--text-secondary)">' + monthlyAdminTotals.DiaLibre + '</span></div>';
+      
+      monthlyStatsSummaryEl.innerHTML += '<h4 class="text-sm font-semibold mt-4 mb-2" style="color: ' + alertTextColor + '">Representantes en Alerta</h4>';
+      
+      var alerted = Object.entries(totals).filter(function(entry) { 
+        return checkAlert(entry[1]); 
+      });
+
+      if (alerted.length === 0) {
+        monthlyStatsSummaryEl.innerHTML += '<p class="text-xs" style="color: var(--text-secondary)">No hay alertas activas</p>';
+      } else {
+        alerted.forEach(function(entry) {
+          var repId = entry[0];
+          var vals = entry[1];
+          var r = reps.find(function(x) { return x.id === repId; });
+          if (!r) return;
+
+          var alertReason = '';
+          if ((vals.Ausencia || 0) >= ALERT_THRESHOLDS.Ausencia) alertReason += 'Ausencias: ' + (vals.Ausencia || 0) + ' / ';
+          if ((vals.Error || 0) >= ALERT_THRESHOLDS.Error) alertReason += 'Errores: ' + (vals.Error || 0) + ' / ';
+          if ((vals.Tardanza || 0) >= ALERT_THRESHOLDS.Tardanza) alertReason += 'Tardanzas: ' + (vals.Tardanza || 0) + ' / ';
+          
+          monthlyStatsSummaryEl.innerHTML += '<div class="p-2 ' + alertBorder + ' rounded-lg ' + alertBg + '">';
+          monthlyStatsSummaryEl.innerHTML += '<div class="font-semibold" style="color: ' + alertTextColor + '">' + r.nombre + '</div>' + 
+                                            '<div class="text-xs" style="color: var(--text-secondary)">Motivo: ' + alertReason.slice(0, -3) + '</div>' +
+                                            '<div class="text-xs mt-1 font-bold" style="color: var(--danger)">' + vals.puntos + ' puntos totales</div>';
+          monthlyStatsSummaryEl.innerHTML += '</div>';
+        });
+      }
+      monthlyStatsSummaryEl.innerHTML += '</div>';
+    }
+
+    function checkAlert(vals) {
+      return (vals.Ausencia || 0) >= ALERT_THRESHOLDS.Ausencia ||
+             (vals.Error || 0) >= ALERT_THRESHOLDS.Error ||
+             (vals.Tardanza || 0) >= ALERT_THRESHOLDS.Tardanza;
+    }
+
+    function searchHistory(query, tipoFilter) {
+      query = (query || '').trim().toLowerCase();
+      tipoFilter = (tipoFilter || '').trim();
+      var results = [];
+
+      Object.entries(incidencias).forEach(function(entry) {
+        var date = entry[0];
+        var arr = entry[1];
+        arr.forEach(function(item) {
+          var r = reps.find(function(x) { return x.id === item.repId; });
+          var name = r ? r.nombre.toLowerCase() : '';
+
+          // Aplicar filtro de tipo
+          if (tipoFilter && item.tipo !== tipoFilter) return;
+
+          // Aplicar filtro de búsqueda general
+          if (!query || 
+              name.includes(query) || 
+              item.tipo.toLowerCase().includes(query) || 
+              (item.comentario || '').toLowerCase().includes(query) || 
+              date.includes(query)) {
+            results.push({
+              date: date,
+              rep: r ? r.nombre : item.repId,
+              turno: r ? r.turno : '',
+              tipo: item.tipo,
+              cantidad: item.cantidad,
+              comentario: item.comentario,
+              puntos: calculatePoints(item.tipo, date) * item.cantidad,
+              ts: item.ts
+            });
+          }
+        });
+      });
+
+      return results.sort(function(a, b) { return b.date.localeCompare(a.date); });
+    }
+
+    btnHistBuscar.addEventListener('click', function() {
+      var q = histSearch.value.trim();
+      var filter = histTipoFilter.value;
+      var results = searchHistory(q, filter);
+      renderHistResults(results);
+    });
+
+    btnHistLimpiar.addEventListener('click', function() {
+      histSearch.value = '';
+      histTipoFilter.value = '';
+      histResultados.innerHTML = '<p class="text-sm" style="color: var(--text-secondary)">Ingrese un término de búsqueda</p>';
+    });
+    
+    histTipoFilter.addEventListener('change', function() {
+        var q = histSearch.value.trim();
+        var filter = histTipoFilter.value;
+        var results = searchHistory(q, filter);
+        renderHistResults(results);
+    });
+
+
+    function renderHistResults(results) {
+      histResultados.innerHTML = '';
+
+      if (!results.length) {
+        histResultados.innerHTML = '<p class="text-sm" style="color: var(--text-secondary)">Sin resultados</p>';
+        return;
+      }
+
+      results.forEach(function(r) {
+        var badgeClass = getBadgeClass(r.tipo);
+        var tipoLabel = INCIDENT_TYPES[r.tipo] ? INCIDENT_TYPES[r.tipo].label.split(' ')[0] : r.tipo;
+        var pointsText = r.puntos > 0 ? `<span class="text-xs font-bold" style="color: var(--danger)">(${r.puntos} pts)</span>` : '';
+
+        var card = document.createElement('div');
+        card.className = 'glass p-4';
+        
+        card.innerHTML = '<div class="flex items-start justify-between mb-2"><div><div class="font-semibold">' + r.rep + '</div><div class="text-xs" style="color: var(--text-secondary)">' + r.turno + '</div></div><div class="text-sm" style="color: var(--text-secondary)">' + r.date + '</div></div>' + 
+                         '<div class="flex items-center gap-2">' + 
+                           '<span class="incident-badge ' + badgeClass + '">' + tipoLabel + '</span>' + 
+                           '<span class="text-sm">×' + r.cantidad + '</span>' + 
+                           pointsText +
+                           (r.comentario ? '<span class="text-sm" style="color: var(--text-secondary)">· ' + r.comentario + '</span>' : '') + 
+                         '</div>';
+        
+        histResultados.appendChild(card);
+      });
+    }
+
+    quickSearch.addEventListener('input', function() {
+      var q = quickSearch.value.trim().toLowerCase();
+      var cards = repListEl.children;
+      
+      for (var i = 0; i < cards.length; i++) {
+        var text = cards[i].textContent.toLowerCase();
+        cards[i].style.display = text.includes(q) ? '' : 'none';
+      }
+    });
+
+    btnExport.addEventListener('click', function() {
+      var payload = { reps: reps, incidencias: incidencias };
+      var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'control_asistencia_' + new Date().toISOString().slice(0, 10) + '.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Datos exportados exitosamente', 'success');
+    });
+
+    btnImport.addEventListener('click', function() {
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'application/json';
+      
+      input.onchange = function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+          try {
+            var obj = JSON.parse(ev.target.result);
+            
+            if (obj.reps && Array.isArray(obj.reps)) reps = obj.reps;
+            if (obj.incidencias && typeof obj.incidencias === 'object') incidencias = obj.incidencias;
+            
+            showToast('Datos importados exitosamente', 'success');
+            renderAll();
+          } catch (err) {
+            console.error(err);
+            showToast('Archivo JSON inválido', 'error');
+          }
+        };
+        
+        reader.readAsText(file);
+      };
+      
+      input.click();
+    });
+
+    var tabButtons = document.querySelectorAll('.tab-btn');
+    var tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        tabButtons.forEach(function(b) { b.classList.remove('tab-active'); });
+        btn.classList.add('tab-active');
+        
+        var tab = btn.dataset.tab;
+        tabContents.forEach(function(tc) {
+          tc.classList.toggle('hidden', tc.id !== 'tab-' + tab);
+        });
+
+        if (tab === 'mensual') {
+          renderMonthlyOverview();
+        }
+      });
+    });
+
+    modalRepClose.addEventListener('click', function() { hideModal(modalRep); });
+    modalRepCancel.addEventListener('click', function() { hideModal(modalRep); });
+    modalRepSave.addEventListener('click', saveRepFromModal);
+    btnAddRep.addEventListener('click', openNewRep);
+
+    diarioFecha.addEventListener('change', renderDailyResumen);
+    diarioFecha.addEventListener('change', toggleInputMode);
+    mensualMes.addEventListener('change', renderMonthlyOverview);
+    mensualAno.addEventListener('change', renderMonthlyOverview);
+
+    function renderAll() {
+      populateDiarioTipo();
+      populateHistTipoFilter();
+      renderRepList();
+      toggleInputMode(); // Llamar al inicio para establecer la UI correcta
+      renderDailyResumen();
+      renderMonthlyOverview();
+    }
+
+    window.moveRep = moveRep;
+    window.openEditRep = openEditRep;
+    window.deleteRep = deleteRep;
+
+    renderAll();
+
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        openNewRep();
+      }
+    });
+
+  </script>
+</body>
+</html>

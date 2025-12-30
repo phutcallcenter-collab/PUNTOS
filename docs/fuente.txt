@@ -1,0 +1,3032 @@
+﻿Pestaña 1
+PARTE 1/3 — FUNDAMENTOS DEL SISTEMA
+(Esto es técnico, limpio y profesional. Sin azúcar. Sin código. Sin framework. Solo la anatomía real de tu monstruo.)
+
+
+
+
+---
+
+
+1. Introducción General
+
+
+Este documento define de forma completa, exhaustiva y sin atajos el comportamiento, reglas, estructuras y lógica del sistema de control de puntos e incidencias utilizado en tu ambiente laboral.
+
+
+Es un sistema pensado para:
+
+
+Registrar incidencias diarias
+
+
+Calcular puntos de forma estricta
+
+
+Comprender planificación semanal (turnos/días libres)
+
+
+Administrar excepciones reales (vacaciones, licencias, cambios de turno)
+
+
+Generar reportes mensuales consolidados
+
+
+Emitir alertas preventivas durante el mes
+
+
+
+
+Todo es 100% framework-agnóstico.
+Esto se puede implementar con lo que quieras: HTML puro, React, Vue, Svelte, un Excel glorificado o una IA esclava (como tú prefieras).
+
+
+
+
+---
+
+
+2. Objetivos del Sistema
+
+
+2.1 Objetivo principal
+
+
+Proveer un mecanismo centralizado, confiable y trazable para:
+
+
+Administrar incidencias laborales
+
+
+Calcular puntos según reglas del negocio
+
+
+Determinar descuentos de incentivo mensual
+
+
+Tener una visión clara del comportamiento de cada representante
+
+
+
+
+2.2 Objetivos secundarios
+
+
+Minimizar errores de registro manual
+
+
+Reducir inconsistencias entre días libres vs. incidencias
+
+
+Permitir edición retroactiva con reglas controladas
+
+
+Facilitar supervisión a mitad de mes
+
+
+Detectar patrones problemáticos antes del cierre
+
+
+Establecer una base de datos limpia y exportable
+
+
+
+
+
+
+---
+
+
+3. Alcance y Límites
+
+
+3.1 Lo que el sistema cubre
+
+
+Día a día laboral
+
+
+Tres turnos operativos
+
+
+Planificación semanal
+
+
+Incidencias: tardanza, ausencia, error, celular, otros
+
+
+Vacaciones
+
+
+Licencias médicas
+
+
+Días libres
+
+
+Cambios de turno
+
+
+Exportación mensual
+
+
+Alertas por acumulación
+
+
+
+
+3.2 Lo que NO cubre
+
+
+Control de calidad de llamadas (solo registra puntos si son añadidos manualmente)
+
+
+Cálculo de salario
+
+
+Control de asistencia biométrica real
+
+
+Auditoría legal
+
+
+Flujos de aprobación (manager → RRHH)
+
+
+Reportes financieros
+
+
+Generación automática de turnos
+
+
+
+
+3.3 Suposiciones del sistema
+
+
+Cada representante tiene un turno base: Día, Noche o Mixto.
+
+
+Los mixtos trabajan 3 días por semana (lunes–jueves o viernes–domingo).
+
+
+El supervisor puede registrar incidencias retroactivas.
+
+
+El cierre de mes bloquea la edición salvo advertencia.
+
+
+El sistema opera sobre un calendario gregoriano estándar.
+
+
+
+
+
+
+---
+
+
+4. Actores del Sistema
+
+
+4.1 Supervisor / Encargada
+
+
+Puede:
+
+
+Registrar incidencias
+
+
+Editar incidencias antes del cierre
+
+
+Modificar planificación semanal
+
+
+Registrar vacaciones y licencias
+
+
+Ver reportes y alertas
+
+
+Exportar datos
+
+
+
+
+4.2 Representante
+
+
+No interactúa con el sistema.
+Es una entidad pasiva afectada por la lógica.
+
+
+4.3 Sistema Automatizado
+
+
+Tareas internas:
+
+
+Cálculo de puntos
+
+
+Validación de incidencias
+
+
+Detección de alertas
+
+
+Cálculo de días restantes de vacaciones/licencias
+
+
+Consolidación de reporte mensual
+
+
+
+
+
+
+---
+
+
+5. Reglas del Negocio (COMPLETAS)
+
+
+Estas son las reglas madre.
+Las que no se negocian.
+Las que definen la realidad del sistema punitivo.
+
+
+5.1 Puntos por incidencia
+
+
+Incidencia        Lunes–Jueves        Viernes–Domingo
+
+
+Ausencia        3 puntos        6 puntos
+Tardanza        2 puntos        3 puntos
+Error        2 puntos        2 puntos
+Celular        Variable (ej. 5)        
+Otros        Variable (ej. 10)        
+
+
+
+
+Regla base: si la incidencia afecta el desempeño laboral, genera puntos.
+
+
+
+
+---
+
+
+5.2 Reglas por incidencia
+
+
+Ausencia
+
+
+Requiere que el representante estuviera planificado ese día.
+
+
+No se registra ausencia si:
+
+
+el representante está de vacaciones
+
+
+está de licencia médica
+
+
+está libre
+
+
+
+
+Ausencia en día libre → no válida
+
+
+Ausencia en día cubierto por cambio → válida si estaba planificado cubrir.
+
+
+
+
+
+
+---
+
+
+Tardanza
+
+
+Requiere que el reps hiciera turno ese día.
+
+
+No aplica en vacaciones, licencias o días libres sin cobertura.
+
+
+Tardanza en cobertura → válida.
+
+
+
+
+
+
+---
+
+
+Error
+
+
+Solo puede registrarse si el reps:
+
+
+estaba trabajando
+
+
+estaba cubriendo a alguien
+
+
+NO estaba en día libre sin cobertura
+
+
+
+
+Error en día libre (sin haber cubierto) → inválido
+
+
+Error durante turno cubierto → válido
+
+
+
+
+
+
+---
+
+
+Celular / Otros
+
+
+Son incidencias manuales de punto variable.
+
+
+Aplican solo si el reps está en jornada laboral.
+
+
+
+
+
+
+---
+
+
+5.3 Vacaciones
+
+
+14 días laborables (no cuentan días libres ni feriados).
+
+
+Si se selecciona inicio, el sistema calcula:
+
+
+días libres del reps
+
+
+feriados del mes
+
+
+
+
+Se descuenta solo días laborables.
+
+
+Durante vacaciones NO se registran incidencias.
+
+
+Deben mostrarse como:
+
+
+“De vacaciones: X días restantes”
+
+
+
+
+
+
+
+
+---
+
+
+5.4 Licencia médica
+
+
+Cuenta días continuos, laborables o no.
+
+
+Durante licencia no aplica ningún tipo de incidencia.
+
+
+Solo se muestra en tabla diaria si afecta planificación.
+
+
+
+
+
+
+---
+
+
+5.5 Cambios de turno
+
+
+Un reps puede:
+
+
+cambiar turno con otro de día/noche
+
+
+cubrir un turno en su día libre (caso menos común)
+
+
+cubrir doble turno (caso raro, pero permitido)
+
+
+
+
+Reglas:
+
+
+1. Si A cubre a B →
+A trabaja ese día en el turno de B
+B libra ese día
+
+
+
+
+2. Si A cubre doble turno →
+A aparece en ambos turnos ese día
+
+
+
+
+3. Si el reps cubre, puede recibir incidencias válidas.
+
+
+
+
+
+
+
+
+---
+
+
+5.6 Días libres
+
+
+No se registran incidencias
+
+
+Excepto:
+
+
+si el reps cubrió turno
+
+
+si tiene licencia médica (no se registran incidencias pero puede aparecer en calendario)
+
+
+
+
+
+
+
+
+---
+
+
+5.7 Feriados
+
+
+No se contabilizan como días laborales para vacaciones
+
+
+Pero sí cuentan para tardanzas/errores/ausencias si hubo turno programado
+
+
+Feriado ≠ día libre
+
+
+
+
+
+
+---
+
+
+5.8 Cierre de mes
+
+
+Después del cierre:
+
+
+No se pueden editar incidencias
+
+
+No se pueden registrar nuevas
+
+
+Solo se permite edición con advertencia obligatoria:
+
+
+
+
+
+
+Ejemplo:
+“Editar después del cierre puede causar inconsistencias en el reporte.”
+
+
+
+
+---
+
+
+6. Tipología de Incidencias (Definición Formal)
+
+
+6.1 Incidencia estándar (con puntos)
+
+
+tardanza
+
+
+ausencia
+
+
+error
+
+
+celular
+
+
+otros
+
+
+
+
+6.2 Incidencia sin puntos
+
+
+vacaciones
+
+
+licencia médica
+
+
+cambio de turno
+
+
+permiso
+
+
+libre
+
+
+
+
+Estas modifican planificación o estado, pero no puntúan.
+
+
+
+
+---
+
+
+7. Calendario Laboral
+
+
+7.1 Turnos
+
+
+Turno Día: reps base del día
+
+
+Turno Noche: reps base de noche
+
+
+Turno Mixto:
+
+
+tres días mixtos por semana
+
+
+el resto en su turno base (día o noche)
+
+
+depende si es mixto de semana o mixto de fin de semana
+
+
+
+
+
+
+
+
+---
+
+
+7.2 Días libres
+
+
+Cada reps tiene 1 día libre fijo por semana.
+La planificación requiere saberlo.
+
+
+
+
+---
+
+
+7.3 Feriados
+
+
+Días seleccionados manualmente cada mes.
+
+
+
+
+---
+
+
+8. Excepciones Operativas Reales
+
+
+Estas son las que causan errores si no se modelan bien.
+
+
+8.1 Reps que cubren su día libre
+
+
+Problema clásico:
+Un reps que normalmente libra lunes, pero cubre un turno ese lunes.
+Ese día si puede:
+
+
+llegar tarde
+
+
+cometer error
+
+
+ausentarse (si no llegó a cubrir)
+
+
+
+
+
+
+---
+
+
+8.2 Doble turno
+
+
+Si un reps cubre mañana y trabaja noche, aparece en:
+
+
+Turno Día
+
+
+Turno Noche
+
+
+
+
+Ambos válidos.
+
+
+
+
+---
+
+
+8.3 Incidencia retroactiva
+
+
+La encargada puede recordar una falta tardía una semana después.
+
+
+Reglas:
+
+
+1. Permitido antes del cierre del mes
+
+
+
+
+2. Requiere validación del estado del día
+
+
+
+
+3. No se permite registrar:
+
+
+ausencia si ese día estaba de vacaciones
+
+
+error si estaba libre y no cubrió
+
+
+tardanza en día no laborable
+
+
+
+
+
+
+4. Después del cierre:
+
+
+solo permitir con advertencia
+
+
+debe recalcular el reporte
+
+
+
+
+
+
+
+
+
+
+---
+
+
+8.4 Reps que están de vacaciones y “aparecen” trabajando
+
+
+Error fatal.
+El sistema debe impedirlo.
+
+
+
+
+---
+
+
+8.5 Licencias médicas que empiezan o terminan a mitad de semana
+
+
+Ejemplo:
+Licencia del 3 al 7 →
+El 3,4,5,6,7 no se aplican incidencias.
+
+
+
+
+---
+
+
+Pestaña 2
+PARTE 2/3 — ARQUITECTURA LÓGICA Y MODELOS
+ (La parte que separa a un proyecto hobby de un software serio.)
+________________
+
+
+9. Arquitectura Conceptual del Sistema
+El sistema se basa en tres pilares:
+________________
+
+
+9.1 Pila de Datos (Data Layer)
+Representa TODA la información persistente.
+Incluye:
+* Representantes
+* Planificación semanal
+* Feriados
+* Vacaciones
+* Licencias
+* Incidencias diarias
+* Configuración del mes
+* Estado de cierre del mes
+No contiene lógica.
+Solo valores limpios y validados.
+________________
+
+
+9.2 Motor de Lógica (Logic Layer)
+Aquí viven TODAS las reglas del sistema:
+* Validaciones
+* Asignación de puntos
+* Reglas laborales
+* Excepciones
+* Detección de alertas
+* Cálculo del reporte
+* Ciclo de vida de incidencias
+Este es el “cerebro”.
+Debe ser framework-agnóstico.
+________________
+
+
+9.3 Capa de Presentación (UI Layer)
+Cualquier framework o HTML puede implementarla.
+Incluye:
+* Pantalla principal (vista diaria)
+* Modal de incidencias
+* Vista de planificación
+* Vista de reporte mensual
+* Alertas del mes
+* Navegación
+No debe contener reglas de negocio.
+ Solo llamar a la lógica y mostrar el resultado.
+________________
+
+
+10. Modelos de Datos (Definición Universal)
+(Estos son los tipos de datos neutrales al framework.)
+________________
+
+
+10.1 Representante
+Representative {
+    id: string,
+    nombre: string,
+    turnoBase: "dia" | "noche" | "mixto",
+    diaLibre: "lunes" | "martes" | "miércoles" | "jueves" | "viernes" | "sábado" | "domingo",
+    tipoMixto: "semana" | "finDeSemana" | null
+}
+
+
+________________
+
+
+10.2 Planificación Semanal
+(La plantilla base usada para cada día del mes)
+WeeklyPlanning {
+    dia: [id1, id2, id3, ...],
+    noche: [id4, id5, ...],
+    mixtosDia: [id6, id7, ...],
+    mixtosNoche: [id8, id9, ...]
+}
+
+
+Explicación:
+ Los mixtos aparecen tanto en mañana como en noche según su tipo.
+________________
+
+
+10.3 Día Operativo (Estado Calculado del Día)
+(Generado automáticamente cada día)
+DayState {
+    fecha: "YYYY-MM-DD",
+
+
+    feriado: boolean,
+    
+    repsDia: lista de ids,
+    repsNoche: lista de ids,
+
+
+    repsEnVacaciones: lista de ids,
+    repsConLicencia: lista de ids,
+
+
+    cambiosDeTurno: [
+        { de: idA, a: idB, tipo: "swap" | "cobertura" | "doble" }
+    ]
+}
+
+
+________________
+
+
+10.4 Incidencia
+Incident {
+    id: string,
+    fecha: "YYYY-MM-DD",
+    repsId: string,
+    tipo: "tardanza" | "ausencia" | "error" | "celular" | "otros",
+    comentario: string | null,
+    puntos: number,
+    timestampRegistro: number
+}
+
+
+________________
+
+
+10.5 Marcadores Especiales
+Vacaciones
+Vacation {
+    repsId: string,
+    inicio: "YYYY-MM-DD",
+    diasRestantes: number,
+    diasTomados: number
+}
+
+
+Licencia
+License {
+    repsId: string,
+    inicio: "YYYY-MM-DD",
+    fin: "YYYY-MM-DD"
+}
+
+
+________________
+
+
+Cambios de Turno
+ShiftChange {
+    fecha: "YYYY-MM-DD",
+    giverId: string,
+    receiverId: string,
+    tipo: "swap" | "cobertura" | "doble",
+    comentario: string
+}
+
+
+________________
+
+
+10.6 Configuración del Mes
+MonthConfig {
+    mes: number,
+    año: number,
+    feriados: ["YYYY-MM-DD"],
+    cierre: false
+}
+
+
+________________
+
+
+11. Estados Globales del Sistema
+El sistema tiene tres grandes estados globales:
+11.1 Estado del Mes
+* feriados
+* cierre
+* configuración
+11.2 Estado de Planificación
+* turnos base
+* mixtos
+* días libres
+* cambios de turno
+11.3 Estado de Incidencias
+* lista diaria
+* historial por reps
+* cálculo mensual
+Cada acción modifica solo su estado, no los demás.
+________________
+
+
+12. Relaciones entre Entidades
+12.1 Representante ↔ Planificación
+Cada reps aparece en:
+* Su turno base
+* Su turno mixto (si aplica)
+* Las listas derivadas del día actual
+12.2 Representante ↔ Incidencias
+Un reps puede tener múltiples incidencias por día, aunque normalmente solo 1.
+12.3 Día ↔ Incidencias
+Las incidencias se agrupan por fecha.
+12.4 Día ↔ Cambios de turno
+Los cambios modifican el estado del día antes de validar incidencias.
+12.5 Representante ↔ Vacaciones / Licencias
+Estos estados modifican permisos para registrar incidencias.
+________________
+
+
+13. Ciclo de Vida de una Incidencia
+1. Supervisor abre modal
+2. Busca reps
+3. Selecciona fecha
+4. Selecciona tipo
+5. Ingresa comentario
+6. Sistema valida según reglas del negocio
+7. Si válido → calcular puntos
+8. Guardar incidencia
+9. Actualizar vista diaria
+10. Actualizar alerta mensual si aplica
+________________
+
+
+14. Validaciones Generales
+Antes de registrar cualquier incidencia:
+14.1 Verificar si el reps estaba programado para trabajar
+o si tenía cobertura.
+14.2 Verificar si estaba de vacaciones
+→ entonces ninguna incidencia es válida.
+14.3 Verificar si estaba de licencia médica
+→ ninguna incidencia es válida.
+14.4 Verificar si era su día libre
+→ solo puede recibir incidencia si cubrió turno.
+14.5 Verificar cambios de turno
+→ puede recibir incidencia del turno cubierto.
+________________
+
+
+15. Validaciones Específicas por Tipo
+15.1 Ausencia
+Válida si:
+* reps estaba planificado ese día
+* NO estaba de vacaciones
+* NO estaba en licencia
+* NO estaba libre (a menos que cubriera turno)
+15.2 Tardanza
+Válida si:
+* reps estaba trabajando ese día
+* o cubriendo turno
+15.3 Error
+Válida si:
+* reps estaba trabajando
+* o cubriendo turno
+NO válida si:
+* reps estaba completamente libre
+* reps estaba de vacaciones
+* reps estaba de licencia
+15.4 Celular / Otros
+Válidos si:
+   * reps estaba trabajando o cubriendo turno
+________________
+
+
+16. Manejo de Casos Edge
+El sistema debe contemplar:
+   * Error en día libre sin cobertura → anular
+   * Ausencia de alguien que estaba de vacaciones → anular
+   * Tardanza en día marcado como licencia → anular
+   * Doble turno → permitir incidencias en ambos
+   * Cambio de turno → permitir incidencias según turno cubierto
+   * Registro retroactivo → recalcular puntos
+________________
+
+
+17. Planificación Semanal
+Base del funcionamiento.
+17.1 La semana laboral define:
+   * dónde aparece cada reps
+   * qué días trabaja
+   * cuándo libra
+   * cómo se muestra en la app
+17.2 Para cada día del mes:
+Derivas:
+   1. Turno Día
+   2. Turno Noche
+   3. Mixtos asignados
+   4. Vacaciones aplicables
+   5. Licencias existentes
+   6. Cambios de turno
+17.3 Representación del día
+Cada día se representa como:
+Turno Día: [lista final]
+Turno Noche: [lista final]
+En vacaciones: [lista]
+En licencia: [lista]
+Cambios: [lista]
+
+
+________________
+
+
+
+
+Pestaña 3
+PARTE 3/3 — FLUJOS, UI CONCEPTUAL Y LÓGICA OPERATIVA
+(La última parte de la Biblia: cómo se comporta la app en la práctica, item por item, sin código ni framework.)
+
+
+
+
+---
+
+
+18. Flujos de usuario (secuencias concretas)
+
+
+Cada flujo describe paso a paso qué hace el usuario y qué espera el sistema.
+
+
+18.1 Flujo: Abrir la app / ver el día
+
+
+1. Usuario abre la app → vista Hoy (fecha = hoy) se carga.
+
+
+
+
+2. Sistema obtiene: planificación base, feriados del mes, vacaciones/licencias activas para la fecha, y cambios de turno del día.
+
+
+
+
+3. Sistema calcula DayState y presenta:
+
+
+Turno Día (lista final)
+
+
+Turno Noche (lista final)
+
+
+Incidencias del día (agrupadas por tipo; omitir grupos vacíos)
+
+
+Contador de reps por turno
+
+
+
+
+
+
+4. Usuario puede filtrar por nombre/turno, abrir historial, o registrar incidencia.
+
+
+
+
+
+
+
+
+---
+
+
+18.2 Flujo: Registrar incidencia (caso típico)
+
+
+1. Supervisor abre modal (FAB).
+
+
+
+
+2. Busca y selecciona representante (autocomplete).
+
+
+
+
+3. Selecciona fecha (prellenada con hoy).
+
+
+
+
+4. Selecciona tipo de incidencia.
+
+
+
+
+5. Añade comentario (opcional).
+
+
+
+
+6. Sistema valida con validateIncident (ver reglas).
+
+
+Si falla → muestra error con texto preciso (ej. “No puede registrar ausencia: el representante estaba de vacaciones ese día.”).
+
+
+
+
+
+
+7. Si valida → computePoints → guarda incidencia en la fecha correspondiente → actualiza historial del rep → recalcula alertas y totals.
+
+
+
+
+8. Interfaz refresca vista actual si la fecha es la mostrada.
+
+
+
+
+
+
+
+
+---
+
+
+18.3 Flujo: Registrar cambio de turno / cobertura
+
+
+1. Modal específico para shift-change (o opción en modal genérico).
+
+
+
+
+2. Input: fromRep, toRep, date, turns (day / night / both), tipo (swap/cover/double), comentario.
+
+
+
+
+3. Validación: ambos reps existen; la persona que cede efectivamente tenía el turno en la planificación base o existe un acuerdo.
+
+
+
+
+4. Si válida → actualiza DayState del día: remueve/añade en listas finales → guarda ShiftChange (registro audit) → refleja en UI como “Cubriendo / Cedió”.
+
+
+
+
+5. Después, incidencias válidas se permiten según el nuevo estado.
+
+
+
+
+
+
+
+
+---
+
+
+18.4 Flujo: Marcar vacaciones/licencia
+
+
+1. Supervisor abre panel de vacaciones.
+
+
+
+
+2. Selecciona reps, fecha inicio y duración.
+
+
+
+
+3. Sistema calcula días laborables (excluye días libres y feriados).
+
+
+
+
+4. Crea Vacation block (o License block).
+
+
+
+
+5. Afecta presentación del DayState para las fechas involucradas → impide registro de incidencias no permitidas.
+
+
+
+
+
+
+
+
+---
+
+
+18.5 Flujo: Editar / eliminar incidencia
+
+
+1. Usuario abre historial o fila de incidencia → click editar/eliminar.
+
+
+
+
+2. Validación: la incidencia pertenece a mes no cerrado. (Si mes cerrado → bloqueo con advertencia y registro de quién pidió excepción.)
+
+
+
+
+3. En edición que cambie tipo/fecha → re-validate y recalcular puntos.
+
+
+
+
+4. Guardar → actualizar historial, recalcular alertas y totals.
+
+
+
+
+
+
+
+
+---
+
+
+18.6 Flujo: Generar reporte mensual y exportar
+
+
+1. Usuario abre Reporte → selecciona mes (default = mes actual).
+
+
+
+
+2. Sistema obtiene getMonthlyTotals(month) (suma por rep y por tipo).
+
+
+
+
+3. UI muestra donut y tabla con columnas: Nombre, Ausencias, Tardanzas, Errores, Celular, Otros, Total.
+
+
+
+
+4. Botón Exportar → genera un XLSX o CSV con la tabla.
+
+
+
+
+5. Archivo descargable: reporte_mensual_{YYYY-MM}.xlsx.
+
+
+
+
+
+
+
+
+---
+
+
+19. Pantallas definidas (conceptual, por vista)
+
+
+19.1 Header (global)
+
+
+Título, fecha legible, botones: Hoy, Planificación, Reporte, Campana (alertas).
+
+
+Botón Hoy vuelve a fecha actual.
+
+
+
+
+19.2 Vista Hoy (Dashboard)
+
+
+Layout: columna izquierda → Turnos; columna derecha → Incidencias del día.
+
+
+Cada turno: tarjeta con título, contador, acordéon con lista de reps y tags (Mixto, Cubriendo, Vacaciones X días, Licencia).
+
+
+Incidencias: lista/tablas por tipo; cada fila: rep (link historial), tipo (badge color), comentario, acciones (editar/eliminar según permisos).
+
+
+FAB para abrir modal de incidencia.
+
+
+
+
+19.3 Modal de Incidencia
+
+
+Campos: búsqueda rep, fecha, tipo, comentario, (para shift-change: campos adicionales).
+
+
+Validaciones visibles y claras.
+
+
+Botones: Cancelar / Registrar.
+
+
+
+
+19.4 Vista Planificación
+
+
+Dos pestañas: Turno Día / Turno Noche.
+
+
+Cada pestaña muestra la lista base (editable): añadir rep (select de reps existentes), quitar.
+
+
+Botón Guardar semana (escribe plantilla base).
+
+
+Opcional: mini-calendario para asignar días libres.
+
+
+
+
+19.5 Historia de representante (modal)
+
+
+Encabezado: nombre + totales del mes.
+
+
+Cronología descendente: fecha – tipo – puntos – comentario.
+
+
+Totales por categoría en el encabezado.
+
+
+Botones para editar entradas si mes abierto.
+
+
+
+
+19.6 Reporte
+
+
+Selector mes.
+
+
+Donut (proporciones por tipo).
+
+
+Tabla exportable.
+
+
+Top infractores destacados (link a historial).
+
+
+
+
+19.7 Campana / Alertas
+
+
+Badge numérico.
+
+
+Panel emergente con top N infractores y alertas (3 errores, 3 ausencias, etc.).
+
+
+Link a cada rep.
+
+
+
+
+
+
+---
+
+
+20. Comportamiento esperado por pantalla (detalles UI → lógica)
+
+
+Carga de Hoy: consulta getPlanning() + getStatus(date) + getIncidents(date) → construir DayState → render.
+
+
+Filtrado: búsqueda por nombre filtra ambas columnas y lista de incidencias.
+
+
+Accesibilidad: modales trap foco; ESC cierra; enter en formulario envía.
+
+
+Mensajes de error: precisos y no técnicos (ej: “No puede registrar ausencia: el representante estaba de vacaciones el 2025-12-05”).
+
+
+Confirmaciones: eliminar incidencia pide confirmación.
+
+
+Persistencia inmediata: cada cambio guarda inmediatamente en LocalStorage.
+
+
+Multi-tab: storage event → refrescar vista si detecta cambio de la clave DB.
+
+
+
+
+
+
+---
+
+
+21. Lógica de cálculo de puntos (reglas concretas y pseudo-algoritmo)
+
+
+21.1 Reglas base (recordatorio)
+
+
+Ausencia: weekday = 3 pts; weekend = 6 pts
+
+
+Tardanza: weekday = 2 pts; weekend = 3 pts
+
+
+Error: 2 pts siempre
+
+
+Celular / Otros: configurable, por defecto ejemplo 5 / 10
+
+
+
+
+> Weekend se define como viernes–sábado–domingo en tu operación.
+(Confirma si quieres otro conjunto; esto es parte del config por mes.)
+
+
+
+
+
+
+
+
+---
+
+
+21.2 Pseudocódigo general computePoints(incident, date):
+
+
+function computePoints(incident, date, config):
+    tipo = incident.tipo
+    isWeekend = isDateInWeekend(date) // reglas de la empresa
+    if tipo == 'ausencia':
+        return isWeekend ? config.absence.weekend : config.absence.weekday
+    if tipo == 'tardanza':
+        return isWeekend ? config.tardiness.weekend : config.tardiness.weekday
+    if tipo == 'error':
+        return config.error.value
+    if tipo == 'celular':
+        return config.cellphone.value // o incident.meta.points si variable
+    if tipo == 'otros':
+        return incident.meta && incident.meta.points ? incident.meta.points : 0
+
+
+Los valores config son editables por mes en MonthConfig.points_rules.
+
+
+
+
+
+
+---
+
+
+21.3 Reglas de inmutabilidad y edición
+
+
+points se calcula y guarda al crear la incidencia.
+
+
+Edición de tipo/fecha provoca recalculo (si mes abierto).
+
+
+Después del cierre de mes, puntos bloqueados salvo autorización.
+
+
+
+
+
+
+---
+
+
+22. Lógica de vacaciones y licencias (cálculo de días laborables)
+
+
+22.1 Vacaciones (14 días laborables)
+
+
+Input: fecha inicio (workday)
+
+
+Algoritmo:
+
+
+1. Itera fecha a fecha, excluyendo: días que el reps tiene como diaLibre y feriados listados en MonthConfig.feriados.
+
+
+
+
+2. Cuenta solo días laborales; acumula hasta 14.
+
+
+
+
+3. Guarda block con inicio y diasTomados/diasRestantes.
+
+
+
+
+
+
+Mostrar: “De vacaciones: X días restantes” en turno del día.
+
+
+Efecto: no permitir incidencias durante esos días.
+
+
+
+
+22.2 Licencia médica
+
+
+Input: fecha inicio y fin.
+
+
+Guía:
+
+
+bloquea todos los días entre inicio y fin (incluye fines y feriados).
+
+
+Mostrar en turno: “Licencia: X días restantes”
+
+
+No permitir incidencias en rango.
+
+
+
+
+
+
+
+
+---
+
+
+23. Lógica de cambios de turno (detallada)
+
+
+23.1 Tipos
+
+
+swap: A y B intercambian sus turnos/fechas.
+
+
+cover: A cubre el turno de B; B queda libre ese día.
+
+
+double: A cubre ambos turnos (mañana y noche).
+
+
+
+
+23.2 Efectos sobre DayState
+
+
+Aplicar ShiftChange modifica listas repsDia y repsNoche del día target instantáneamente.
+
+
+Las validaciones usan el DayState resultante (post cambios) para decidir si una incidencia es válida.
+
+
+
+
+23.3 Pseudocódigo para aplicar shift-change:
+
+
+function applyShiftChange(sc):
+    dayState = getDayState(sc.fecha)
+    if sc.tipo == 'swap':
+        swap positions in dayState (fromId <-> toId)
+    if sc.tipo == 'cover':
+        remove fromId from dayState.turnAssigned // if present
+        add toId to dayState.turnAssigned
+    if sc.tipo == 'double':
+        ensure toId present in both dayState.dia and dayState.noche
+    persist shiftChange record
+    save updated dayState
+
+
+
+
+---
+
+
+24. Reporte mensual (detalles y formato de export)
+
+
+24.1 Contenido del reporte (por rep)
+
+
+Nombre
+
+
+Puntos ausencias (suma)
+
+
+Puntos tardanzas (suma)
+
+
+Puntos errores (suma)
+
+
+Puntos celular (suma)
+
+
+Puntos otros (suma)
+
+
+Total general
+
+
+
+
+24.2 Formato de exportación
+
+
+XLSX con hoja Puntos del Mes.
+
+
+Alternativa CSV UTF-8.
+
+
+Nombre del archivo: reporte_mensual_{YYYY-MM}.xlsx.
+
+
+Encabezado obligatorio: Nombre,Ausencias,Tardanzas,Errores,Celular,Otros,Total.
+
+
+Valores enteros; sin formatos monetarios.
+
+
+
+
+24.3 Reglas de generación
+
+
+El sistema recorre todas las incidencias incidences[YYYY-MM-*] → agrupa por rep y tipo → aplica suma de puntos.
+
+
+Las incidencias de shift-change, vacaciones y licencias no son contadas en puntos (salvo que exista incidencia adicional).
+
+
+
+
+
+
+---
+
+
+25. Alertas mensuales (reglas concretas)
+
+
+25.1 Umbrales por defecto (configurable)
+
+
+errores ≥ 3 → alerta
+
+
+ausencias ≥ 3 → alerta
+
+
+topN por puntos (N = 3 o 5) → aparecer en campana
+
+
+
+
+25.2 Cálculo y comportamiento
+
+
+Recalcular en cada addIncident/deleteIncident y al cargar la vista.
+
+
+Mostrar badge con cantidad de alertas activas.
+
+
+Panel listando cada entrada: Rep — motivo — total del mes.
+
+
+No bloquear operaciones, solo notificar.
+
+
+
+
+
+
+---
+
+
+26. Exportación (técnica y manejo de datos sensibles)
+
+
+26.1 Datos incluidos
+
+
+Solo: nombre y totales de puntos.
+
+
+No incluir datos sensibles adicionales.
+
+
+
+
+26.2 Backups
+
+
+Función exportDB() → descarga JSON completo (schema versionado).
+
+
+Recomendar: descargar backup antes de cerrar mes.
+
+
+
+
+
+
+---
+
+
+27. Reglas de edición y cierre de mes
+
+
+27.1 Reglas estrictas
+
+
+Si MonthConfig.cierre == true:
+
+
+bloquear addIncident, editIncident, deleteIncident para ese mes.
+
+
+Excepción: una operación con override marcada y registro de who y reason (auditable).
+
+
+
+
+
+
+27.2 Auditoría mínima
+
+
+Cada modificación importante registra {action, user, timestamp, meta} en audit_log (persistido).
+
+
+
+
+
+
+---
+
+
+28. Anexos — Ejemplos operativos y casos reales
+
+
+28.1 Ejemplo 1 — Ausencia en día planificado
+
+
+Fecha: 2025-12-06 (sábado).
+
+
+Tipo: Ausencia — weekend → 6 pts.
+
+
+Registro: válido si rep estaba en repsNoche o repsDia.
+
+
+Resultado: sumar 6 al total del rep.
+
+
+
+
+28.2 Ejemplo 2 — Tardanza en cobertura
+
+
+Rep A normalmente libre el miércoles, cubre a B ese miércoles.
+
+
+Registra tardanza → válida → puntos asignados según weekday.
+
+
+
+
+28.3 Ejemplo 3 — Vacaciones
+
+
+Inicio 2025-12-01; se calculan 14 días laborables → final real calculado saltando feriados y días libres.
+
+
+Durante ese rango, el rep no recibe incidencias.
+
+
+
+
+28.4 Ejemplo 4 — Editar después del cierre
+
+
+Mes 2025-11 cerrado.
+
+
+Supervisor intenta editar incidencia 2025-11-14 → sistema bloquea y solicita confirmación + override.
+
+
+Si override: registro en audit_log y recalcula reporte (se advierte de riesgo).
+
+
+
+
+
+
+---
+
+
+29. Tests de aceptación (lista mínima)
+
+
+Registrar tardanza en día planificado → ver puntos sumados.
+
+
+Intentar registrar ausencia en día libre sin cobertura → rechazo y mensaje correcto.
+
+
+Crear shift-change (cover) → rep aparece en turno del día → incidencia válida.
+
+
+Crear vacation block → impedir incidencias en rango.
+
+
+Cerrar mes → bloquear ediciones.
+
+
+Exportar reporte → abrir en Excel y validar sumatorias.
+
+
+
+
+
+
+---
+
+
+30. Deployment / Operaciones rápidas (sin framework)
+
+
+El app funciona como sitio estático 100% (index.html + css + js).
+
+
+Para desplegar: subir carpeta a hosting estático (GitHub Pages, Netlify, Firebase Hosting modo static).
+
+
+Recomendar backup JSON antes de despliegue a producción.
+
+
+
+
+
+
+---
+
+
+31. Notas finales (resumen ejecutivo rápido)
+
+
+Planificación = plantilla base (no por fecha).
+
+
+Incidencias = eventos por fecha (dinámicos).
+
+
+Vacaciones/licencias = bloques que bloquean incidencias.
+
+
+Cambios de turno modifican el DayState del día resultante.
+
+
+Cierre de mes bloquea edición salvo override auditable.
+
+
+Export = XLSX/CSV con columnas fijas.
+
+
+Alertas = preventivas, no punitivas per se.
+
+
+Todo debe ser persistido localmente y versionado (DB versioning).
+
+
+
+
+
+
+---
+
+
+
+
+Pestaña 4
+Bien: cierro los huecos con tus decisiones y las convierto en reglas técnicas inapelables. Lo que sigue es la extensión precisa de la Biblia —no opiniones ni “mejoras”— sino reglas y cambios concretos que hay que aplicar al diseño y al código. Pega esto donde corresponda y el sistema quedará sin ambigüedades.
+________________
+
+
+A. Resumen de decisiones que acepto e incorporo (texto corto)
+   1. Si un representante cubre en su día libre, ese día deja de ser día libre y cualquier falta se le atribuye a quien estuvo presente (el que cubrió).
+   2. La prioridad para decidir “qué turno tiene efecto” es: cobertura (turno trabajado) > turno base cuando hay conflicto.
+   3. Los cambios de turno (swap/cover/doble) se registran en planificación como eventos por fecha (ShiftChange) y afectan DayState del día objetivo.
+   4. Los swaps separados entre fechas distintas se mantienen como registros independientes y no se “fusionan”. Si uno falla, la ausencia penaliza a quien no asistió.
+   5. Si hay licencia en ese día, anula cualquier swap/cover/registro que implique trabajar —licencia > swap.
+   6. Validación retroactiva se hace contra la planificación del día (la que resultó antes de editar), y luego la actualización puede anular puntos (p. ej. si aparece licencia).
+   7. Cierre de mes permite un período de gracia configurable (por defecto = 5 días) para correcciones; después de ese plazo, edición bloqueada salvo override auditable.
+   8. Las incidencias solo pertenecen al mes de su fecha; no se arrastran entre meses.
+   9. Top3 = por total de puntos; Top5 = por número de incidencias punitivas. Empates se resuelven por el otro criterio; si persiste empate, ordenar por nombre (determinismo).
+   10. Planificación real se mantiene semanal (lunes–domingo); el sistema guarda plantillas semanales y provee vista mensual compuesta de semanas.
+   11. Alertas se disparan al primero que ocurra: 3 incidencias que sumen puntos o 15 puntos totales en el mes (lo que ocurra primero). Alarmas se recalculan en cada cambio y persisten durante el mes.
+   12. Roles: Supervisor (puede registrar y soft-delete), Gerencia (puede hard-delete y override con entrada en audit_log). No hay autenticación; modo visual “perfil” controla UI/acciones.
+________________
+
+
+B. Cambios concretos al modelo de datos
+Añadir o ajustar campos/entidades:
+1) ShiftChange (ya definido, ahora formal)
+ShiftChange {
+  id: string,
+  fecha: "YYYY-MM-DD",
+  tipo: "swap" | "cover" | "double",
+  fromId: string,   // quien cede
+  toId: string,     // quien cubre
+  estado: "active" | "cancelled",
+  created_at: ISO,
+  comentario: string | null
+}
+
+
+   * Se guarda en la planificación para la fecha objetivo y se aplica a DayState.
+2) WeeklyPlanning (ajuste)
+Guardamos plantillas por semana (lunes->domingo):
+WeeklyPlanning {
+  semanaInicio: "YYYY-MM-DD", // lunes
+  day: [repId...],
+  night: [repId...],
+  mixtos: [repId...] // marcados por tipoMixto en rep
+}
+
+
+   * Para ver el mes: se compone de las WeeklyPlanning de ese mes.
+3) Vacation / License (confirmado)
+Vacation conserva inicio y días laborables contados. License conserva inicio/fin absoluto.
+4) AuditLog
+AuditLogEntry {
+  id,
+  action: "createIncident" | "editIncident" | "deleteIncident" | "overrideClose" | "applyShiftChange" | ...,
+  actor: "Supervisor" | "Gerencia" | string,
+  timestamp,
+  meta: {}
+}
+
+
+5) Incident (ajuste)
+Agregar status y softDeletedBy:
+Incident {
+  id, fecha, repId, tipo, comentario, puntos, created_at,
+  status: "active" | "soft-deleted",
+  softDeletedBy?: { actor, timestamp, reason }  // si aplica
+}
+
+
+6) MonthConfig (añadir gracePeriodDays)
+MonthConfig {
+  mes: "YYYY-MM",
+  feriados: [...],
+  cierre: boolean,
+  gracePeriodDays: integer // ej. 5
+}
+
+
+________________
+
+
+C. Reglas de prioridad y validación (formal)
+Orden de prioridad para determinar si una incidencia es válida en un día D (se evalúa en este orden):
+   1. Si existe licencia para rep en D → rechazar cualquier incidencia; registrar en audit si hay override.
+   2. Si existe vacation en D → rechazar cualquier incidencia; (vacation > incidencias).
+   3. Si existe ShiftChange activo que pone al rep como trabajador en D (cover o double) → el rep está considerado “trabajando” y cualquier incidencia válida para trabajadores es aplicable.
+   4. Si no hay ShiftChange activo → validar contra planning semanal (turno base de ese día derivado de WeeklyPlanning).
+   5. Si el rep no está asignado a ningún turno final para D → rechazo salvo que se trate de un shiftChange que aún esté pendiente de aplicar (no debe pasar).
+Notas:
+   * Si un shiftChange fue registrado pero luego se añade una license que lo invalida → el shiftChange queda marked y no hace efecto (y debe generarse un log para revisión).
+   * Validación retroactiva: si un supervisor registra una incidencia pasada, se valida usando el DayState que existió en esa fecha. Si datos nuevos (ej. license) aparecen y anulan la incidencia, el sistema actualiza (quita puntos, genera audit log).
+________________
+
+
+D. Swap / Cover: reglas operativas (precisas)
+   1. Registro de swap/cover: requiere fromId, toId, fecha, tipo.
+   2. Aplicación: al guardar, se modifica la WeeklyPlanning o el DayState de fecha según:
+   * cover: añade toId al turno objetivo para la fecha y marca fromId como libre ese día.
+   * swap: intercambia posiciones para la fecha (si ambos estaban asignados).
+   * double: añade toId a ambos turnos para la fecha.
+   3. Persistencia: el ShiftChange queda en la tabla shiftChanges[fecha].
+   4. Fallos: si toId no asiste → el incident ausencia se registra para toId (no para quien pidió la cobertura).
+   5. Si ambas partes acuerdan intercambio futuro → se crean dos ShiftChange independientes (fechas distintas). No hay vínculo implícito entre ellos. Si uno falla no se propaga.
+________________
+
+
+E. Planificación semanal (implementación práctica)
+   * El sistema guarda WeeklyPlanning por semanaInicio (lunes).
+   * Interfaz: crear/editar la semana; arrastrar desde semana previa (copy/paste), “arrastrar” significa clonar plantilla y editar.
+   * Vista mensual = lista de semanas del mes, cada una editable.
+   * Cambios a WeeklyPlanning afectan DayState cuando el día se calcule o cuando se haga recomputeDayState.
+________________
+
+
+F. Cierre de mes y período de gracia
+   * closeMonth("YYYY-MM") marca cierre = true y también graba closedAt = timestamp.
+   * Se define graceDeadline = lastDayOfMonth + gracePeriodDays.
+   * Durante graceDeadline:
+   * supervisor puede EDITAR/DELETE; cambios anotados en audit_log.
+   * Tras graceDeadline:
+   * solo Gerencia puede override; toda acción de override se registra en audit_log con reason y actor.
+________________
+
+
+G. Reporte y reglas de agregación (precisas)
+   * Top3: ordenar por totalPoints (desc).
+   * Top5: ordenar por countIncidenciasPunitivas (desc).
+   * Empates: desempatar por el otro criterio; si persiste empate, ordenar por rep.nombre (alfabético).
+   * Las incidencias con status = soft-deleted no cuentan salvo si softDeletedBy fue revertido.
+________________
+
+
+H. Alertas (umbral y comportamiento)
+   * Umbrales configurables en config.alert_limits = { errors:3, absences:3, incidentsCountThreshold:3, pointsThreshold:15 }.
+   * Lógica: para cada rep en mes M, si count(errors) >= errors OR count(absences) >= absences OR count(punitivas) >= incidentsCountThreshold OR totalPoints >= pointsThreshold → generar alerta.
+   * Alertas se recalculan en cada addIncident, deleteIncident, editIncident, y al cargar vista.
+   * Si se borra una incidencia que desactiva la condición, alerta se desactiva inmediatamente.
+________________
+
+
+I. Roles y permisos (sin auth)
+Modo UI “perfil”:
+   * Supervisor:
+   * Registrar incidencia
+   * Editar (mientras mes esté en gracePeriod)
+   * Soft-delete (marca status = soft-deleted y registra softDeletedBy)
+   * Planificación semanal (editar)
+   * Registrar vacation/license/shiftChange
+   * Gerencia:
+   * Todo lo anterior
+   * Hard-delete (borrar incidencia o marcar override para cerrar mes)
+   * Override post-grace (con audit_log obligatorio)
+   * Revertir soft-delete
+Implementar esto como modo toggle UI, almacenar actor string en audit_log. No hay login.
+________________
+
+
+J. Validaciones que cambian en compute flow
+   1. validateIncident debe:
+   * comprobar licencia/vacation primero
+   * comprobar shiftChange efectivamente otorgó el derecho de trabajar ese día
+   * comprobar que, si incidencia retroactiva, se valida contra DayState original y luego se permite override según reglas de grace/close.
+   2. computePoints permanece como antes, pero si tras la creación aparece una license/vacation que invalida la incidencia → reversar puntos y registrar en audit_log.
+________________
+
+
+K. Operaciones y API necesarias (lista para implementadores)
+Añadir/ajustar funciones públicas (App.Data / App.Validation / App.Calculations):
+App.Data (adiciones)
+   * addShiftChange(ShiftChange)
+   * getShiftChangesByDate(date)
+   * getWeeklyPlanning(semanaInicio)
+   * saveWeeklyPlanning(WeeklyPlanning)
+   * getMonthConfig(mes)
+   * setMonthConfig(mesConfig)
+   * closeMonth(mes)
+   * getAuditLog() / addAuditEntry(entry)
+   * softDeleteIncident(incidentId, actor, reason)
+   * hardDeleteIncident(incidentId, actor, reason)
+App.Validation
+   * validateIncidentForDate(incident, date) (incluye priority rules)
+   * canEditIncident(incidentId, actor) (respecto a grace/close/roles)
+App.Calculations
+   * computePoints(incident, date, config)
+   * getMonthlyTotals(mes)
+   * getAlerts(mes, config)
+________________
+
+
+L. Siguientes pasos recomendados (lo que implemento o te doy a continuación)
+   1. Actualizar dataManager con las nuevas entidades (shiftChanges, weeklyPlannings, audit_log, monthConfig.gracePeriodDays).
+   2. Implementar validateIncident con prioridad de licencia/vacation/shifts/planning.
+   3. Implementar applyShiftChange y la persistencia en WeekPlanning/DayState.
+   4. Agregar UI para selector de semana (guardar plantilla semanal) y vista mensual compuesta.
+   5. Ajustar reporte export por mes y la lógica Top3/Top5 con desempate.
+   6. Añadir toggle UI para Supervisor / Gerencia y flows de soft-delete / hard-delete.
+   7. Añadir tests de aceptación para cada caso edge mencionado.
+Si quieres, te devuelvo ahora la lista exacta de cambios (snippet pseudo-API + contratos) para que puedas pegarlo en el SPEC.md o mandárselo a quien vaya a codificar.
+Dime si quieres que genere:
+   3. La lista de funciones a añadir (con firmas y comportamiento).
+   4. Un diagrama textual de prioridad de reglas.
+   5. Ambos.
+
+
+Pestaña 5
+Aquí tienes el bloque completo listo para pegar en tu Biblia, en formato Markdown limpio, estructurado, con índice, secciones claras y sin inventar nada fuera de lo que ya definiste.
+Esto es documentación de especificación técnica real, no improvisación.
+________________
+
+
+📘 CONTROL DE INCIDENCIAS – ESPECIFICACIÓN TÉCNICA COMPLETA (MÓDULOS DE DATOS, VALIDACIÓN Y API)
+Versión: 1.0
+Formato: Documento base para cualquier implementación (HTML, React, Next, Firebase, GitHub, etc.)
+Estado: Completo y coherente
+________________
+
+
+ÍNDICE
+   1. Modelos de Datos (Schemas Finales)
+
+      * Representatives
+      * WeeklyPlanning
+      * ShiftChange
+      * Vacation
+      * License
+      * Incident
+      * MonthConfig
+      * AuditLogEntry
+      * Estructura raíz de almacenamiento
+      2. Flujo de Validación Único
+
+         * Reglas laborales
+         * Prioridades entre excepciones
+         * Caminos de aceptación y rechazo
+         * Comportamiento retroactivo
+         3. API Pública del Sistema
+
+            * Funciones de Datos
+            * Funciones de Validación
+            * Funciones de Cálculo
+            * Contratos mínimos de UI
+________________
+
+
+1. MODELOS DE DATOS (SCHEMAS FINALES)
+Cada uno es un contrato obligatorio. No se agregan ni se quitan campos sin revisión del sistema completo.
+________________
+
+
+1.1 Representative
+Representative {
+  "id": "string",
+  "nombre": "string",
+  "turnoBase": "dia" | "noche" | "mixto",
+  "diaLibre": "lunes" | "martes" | "miercoles" | "jueves" | "viernes" | "sabado" | "domingo",
+  "tipoMixto": "semana" | "finDeSemana" | null,
+  "activo": true,
+  "empleadoNumero": "string|null",
+  "created_at": "ISO",
+  "updated_at": "ISO|null"
+}
+
+
+________________
+
+
+1.2 WeeklyPlanning
+Clave = lunes que inicia la semana (YYYY-MM-DD).
+WeeklyPlanning {
+  "semanaInicio": "YYYY-MM-DD",
+  "day": ["repId", ...],
+  "night": ["repId", ...],
+  "mixtos": ["repId", ...],
+  "created_at": "ISO",
+  "updated_at": "ISO"
+}
+
+
+________________
+
+
+1.3 ShiftChange
+ShiftChange {
+  "id": "string",
+  "fecha": "YYYY-MM-DD",
+  "tipo": "swap" | "cover" | "double",
+  "fromId": "repId|null",
+  "toId": "repId",
+  "estado": "active" | "cancelled",
+  "created_by": "Supervisor" | "Gerencia" | "string",
+  "created_at": "ISO",
+  "comentario": "string|null"
+}
+
+
+________________
+
+
+1.4 Vacation
+Vacation {
+  "id": "string",
+  "repId": "repId",
+  "inicio": "YYYY-MM-DD",
+  "diasLaborablesSolicitados": 14,
+  "diasTomados": 0,
+  "diasRestantes": 14,
+  "created_at": "ISO",
+  "updated_at": "ISO|null"
+}
+
+
+________________
+
+
+1.5 License
+License {
+  "id": "string",
+  "repId": "repId",
+  "inicio": "YYYY-MM-DD",
+  "fin": "YYYY-MM-DD",
+  "created_at": "ISO",
+  "updated_at": "ISO|null"
+}
+
+
+________________
+
+
+1.6 Incident
+Incident {
+  "id": "string",
+  "fecha": "YYYY-MM-DD",
+  "repId": "repId",
+  "tipo": "tardanza" | "ausencia" | "error" | "celular" | "otros",
+  "comentario": "string|null",
+  "puntos": "number",
+  "status": "active" | "soft-deleted",
+  "softDeletedBy": {
+    "actor": "Supervisor" | "Gerencia" | "string",
+    "timestamp": "ISO",
+    "reason": "string"
+  } | null,
+  "created_by": "Supervisor" | "Gerencia" | "string",
+  "created_at": "ISO",
+  "updated_at": "ISO|null"
+}
+
+
+________________
+
+
+1.7 MonthConfig
+MonthConfig {
+  "mes": "YYYY-MM",
+  "feriados": ["YYYY-MM-DD"],
+  "cierre": false,
+  "closedAt": "ISO|null",
+  "gracePeriodDays": 5
+}
+
+
+________________
+
+
+1.8 AuditLogEntry
+AuditLogEntry {
+  "id": "string",
+  "action": "createIncident" | "editIncident" | "softDeleteIncident" | "hardDeleteIncident" | 
+            "closeMonth" | "overrideClose" | "applyShiftChange" | "revert" | "other",
+  "actor": "Supervisor" | "Gerencia" | "string",
+  "timestamp": "ISO",
+  "meta": { }
+}
+
+
+________________
+
+
+1.9 Storage Root
+{
+  "version": "1",
+  "representatives": [Representative],
+  "weeklyPlannings": { "YYYY-MM-DD": WeeklyPlanning },
+  "shiftChanges": { "YYYY-MM-DD": [ShiftChange] },
+  "incidents": { "YYYY-MM-DD": [Incident] },
+  "vacations": [Vacation],
+  "licenses": [License],
+  "monthConfigs": { "YYYY-MM": MonthConfig },
+  "auditLog": [AuditLogEntry]
+}
+
+
+________________
+
+
+2. FLUJO DE VALIDACIÓN ÚNICO
+Este flujo es la autoridad absoluta sobre si una incidencia es válida o no.
+________________
+
+
+2.1 Lista jerárquica de prioridades (de mayor a menor)
+            1. Licencia médica
+            2. Vacaciones
+            3. ShiftChange (swap/cover/double)
+            4. Planificación semanal
+            5. Día libre
+            6. Incidencias
+________________
+
+
+2.2 Diagrama de decisión
+VALIDAR INCIDENCIA (repId, tipo, fecha)
+            1. ¿Está el representante en licencia en esa fecha?
+ → Sí: RECHAZAR.
+
+            2. ¿Está de vacaciones?
+ → Sí: RECHAZAR.
+
+            3. ¿Existe ShiftChange activo que lo ponga a trabajar ese día?
+ → Sí: se considera “trabajando”.
+→ Pasar al paso 6.
+
+            4. ¿Está planificado para ese día mediante WeeklyPlanning?
+ → Sí: se considera “trabajando”.
+→ Pasar al paso 6.
+
+            5. ¿Es su día libre sin cobertura?
+ → Sí: RECHAZAR.
+
+            6. Validación por tipo
+
+               * Tardanza → válida solo si estaba trabajando.
+               * Ausencia → válida si estaba planificado o cubriendo.
+               * Error → válida solo si estaba trabajando.
+               * Celular/Otros → válida si estaba trabajando.
+               7. Validación de cierre mensual
+
+                  * Si mes cerrado + fuera de período de gracia + actor no es Gerencia → RECHAZAR.
+                  8. Calcular puntos
+ puntos = computePoints(tipo, fecha).
+
+                  9. Guardar incidente + audit log.
+
+                  10. Reglas retroactivas (actualización posterior)
+
+                     * Si se registra después una licencia que cubre este día → el incidente debe ser anulado (soft-delete con audit).
+________________
+
+
+2.3 Validación de ShiftChanges
+                     * Si el representante cubre un turno en su día libre → ese día deja de ser día libre.
+                     * Si hay swap: cada uno trabaja el turno del otro ese día.
+                     * Si hay “doble turno”: solo válido si viene del sistema (no manual).
+________________
+
+
+3. API PÚBLICA OFICIAL
+Todas las funciones retornan:
+{ "ok": true, "data": ... }
+
+
+o
+{ "ok": false, "error": { "code": "ERR_xxx", "message": "..." } }
+
+
+Códigos de error:
+                     * ERR_VALIDATION
+                     * ERR_NOT_FOUND
+                     * ERR_MONTH_CLOSED
+                     * ERR_PERMISSION
+                     * ERR_CONFLICT
+                     * ERR_INTERNAL
+________________
+
+
+3.1 App.Data – Persistencia
+addIncident(incidentObj, actor)
+Validación completa → cálculo → guardado → alertas → audit.
+editIncident(id, updates, actor)
+Revalidación → recálculo → audit.
+softDeleteIncident(id, actor, reason)
+Marca como no válido, resta puntos, audit.
+hardDeleteIncident(id, actor, reason)
+Borrado definitivo (solo Gerencia), audit.
+getIncidentsByDate(fecha)
+Devuelve incidencias activas y soft-deleted.
+getIncidentsByRep(repId, mes?)
+addShiftChange(shiftChangeObj, actor)
+getShiftChangesByDate(fecha)
+saveWeeklyPlanning(planning, actor)
+getWeeklyPlanning(semanaInicio)
+setMonthConfig(config, actor)
+closeMonth(mes, actor)
+Marca cierre + audit.
+exportDB()
+Para backup.
+________________
+
+
+3.2 App.Validation
+validateIncidentForDate(incidentObj)
+Implementa el flujo completo.
+canEditIncident(incidentId, actor, now)
+Permisos + grace + cierre.
+isRepWorkingOnDate(repId, fecha)
+Combina shiftChanges + planning.
+________________
+
+
+3.3 App.Calculations
+computePoints(tipo, fecha, config)
+                     * Ausencia: 3 (lun-jue), 6 (vie-dom)
+                     * Tardanza: 2 (lun-jue), 3 (vie-dom)
+                     * Error: 2
+                     * Celular / otros: valor asignado en incidencia.
+getMonthlyTotals(mes)
+getAlerts(mes, config)
+Umbrales:
+                     * 3 ausencias
+                     * 3 errores
+                     * 3 tardanzas
+                     * 15 puntos totales
+                     * o combinación equivalente
+________________
+
+
+3.4 App.UI (contratos mínimos)
+renderToday(fecha)
+renderPlanning(semanaInicio)
+renderReport(mes)
+openIncidentModal()
+showAlertPanel()
+________________
+
+
+ANEXO – ejemplos
+Ejemplo de Incident válido:
+{
+  "id":"inc001",
+  "fecha":"2025-12-06",
+  "repId":"rep10",
+  "tipo":"ausencia",
+  "comentario":"No llegó",
+  "puntos":6,
+  "status":"active",
+  "created_by":"Supervisor",
+  "created_at":"2025-12-06T10:00:00Z"
+}
+
+
+Ejemplo de ShiftChange:
+{
+  "id":"sc20251206a",
+  "fecha":"2025-12-06",
+  "tipo":"cover",
+  "fromId":"rep5",
+  "toId":"rep10",
+  "estado":"active",
+  "created_by":"Supervisor",
+  "comentario":"Cobertura"
+}
+
+
+________________
+
+
+ESTE DOCUMENTO YA ESTÁ COMPLETO
+Puedes pegarlo tal cual en tu Biblia.
+Esto ya es lo suficientemente claro y estructurado como para usarlo en cualquier framework sin interpretaciones fantasiosas.
+Si deseas, la próxima fase puede ser:
+A) Generar el roadmap de implementación (paso por paso, modular).
+B) Generar los test cases basados en estas reglas.
+C) Crear un diagrama ASCII de arquitectura.
+D) Preparar un PRD para entregarlo como proyecto profesional.
+Tú decides.
+
+
+Pestaña 6
+Perfecto. Voy a darte un roadmap profesional, del tipo que usaría un equipo serio, pero adaptado a tu estilo: claro, modular, sin relleno, sin paja, sin teorías, y sin introducir nada fuera de la Biblia que ya definimos.
+Este roadmap te sirve tanto si lo implementas tú, como si lo implementa Copilot, Gemini, o un primate con un teclado.
+________________
+
+
+📍 ROADMAP OFICIAL — CONTROL DE INCIDENCIAS
+Versión: 1.0
+ Objetivo: Construir el sistema completo sin Frankenstein, sin improvisaciones y sin explosiones mentales.
+________________
+
+
+FASE 0 — Preparación del entorno
+Objetivo: Tener estructura lista antes de escribir una sola línea de lógica.
+0.1 Estructura de carpetas (exacta)
+/control-incidencias/
+│
+├── index.html
+├── css/
+│    └── main.css
+├── js/
+│    ├── data/
+│    │    └── dataManager.js
+│    ├── validation/
+│    │    └── validation.js
+│    ├── calculations/
+│    │    └── calculations.js
+│    ├── features/
+│    │    ├── dailyIncidents.js
+│    │    ├── planning.js
+│    │    ├── shiftChanges.js
+│    │    ├── vacations.js
+│    │    ├── licenses.js
+│    │    └── monthlyReport.js
+│    ├── ui/
+│    │    ├── navigation.js
+│    │    ├── modals.js
+│    │    ├── alerts.js
+│    │    └── components.js
+│    └── core/
+│         └── app.js
+└── assets/
+
+
+0.2 Archivos vacíos creados
+Sin código todavía. Solo estructura.
+0.3 Pegar la Biblia en un archivo raíz
+SPEC.md
+ Para evitar que tú o cualquier IA se invente cosas después.
+________________
+
+
+FASE 1 — Motor de datos (backend local)
+Objetivo: Tener el “backend” en LocalStorage funcionando.
+Módulos:
+                     1. dataManager.js
+
+                        * loadDB()
+                        * saveDB()
+                        * helpers (crear IDs, etc.)
+                        * estructura raíz (según schemas)
+                        2. Representantes
+
+                           * CRUD completo
+                           * Flags activo/inactivo
+                           3. WeeklyPlanning
+
+                              * cargar planificación por semana
+                              * guardar
+                              * arrastrar semana anterior
+                              4. ShiftChanges
+
+                                 * CRUD
+                                 * separar por fecha
+                                 * estados (active/cancelled)
+                                 5. Vacaciones
+
+                                    * registrar
+                                    * calcular días restantes
+                                    * consumir días laborables
+                                    6. Licencias
+
+                                       * registrar
+                                       * rango inicio-fin
+                                       7. Incidencias
+
+                                          * CRUD base
+                                          * soft/hard delete
+                                          * indexadas por fecha
+                                          * indexadas por rep
+                                          8. MonthConfig
+
+                                             * feriados
+                                             * cierre
+                                             * grace period
+                                             9. AuditLog
+
+                                                * append-only
+                                                * registrar acciones
+Entrega de esta fase:
+ DB funcional con operaciones puras.
+Nada de UI todavía.
+________________
+
+
+FASE 2 — Validación y reglas del negocio
+Objetivo: Implementar la lógica REAL del call center.
+Módulos:
+                                                1. validation.js
+
+                                                   * validateIncidentForDate(…)
+                                                   * isRepWorkingOnDate(rep, fecha)
+                                                   * canEditIncident(….)
+                                                   * validación de swap/cover/double
+                                                   2. calculations.js
+
+                                                      * computePoints()
+                                                      * getMonthlyTotals()
+                                                      * getAlerts()
+                                                      3. Integración mínima con dataManager
+
+                                                         * addIncident → validación + cálculo
+                                                         * editIncident → validación + recálculo
+                                                         * retroactividad: licencias/vacaciones que anulan incidencias previas.
+Entrega de esta fase:
+ El motor completo funciona aunque no tenga interfaz.
+________________
+
+
+FASE 3 — Capa de presentación (UI “esqueleto”)
+Objetivo: Renderizar contenido sin estilos. Lo funcional primero.
+Pantallas:
+                                                         1. Hoy
+
+                                                            * mostrar fecha
+                                                            * mostrar incidencias del día
+                                                            * mostrar turnos del día
+                                                            * botón para registrar incidencia
+                                                            2. Modal de Incidencias
+
+                                                               * formulario básico
+                                                               * validación previa
+                                                               * guardar
+                                                               * refrescar vista
+                                                               3. Planificación
+
+                                                                  * selección de semana
+                                                                  * edición turno día / turno noche / mixto
+                                                                  * guardar cambios
+                                                                  * arrastrar de semana anterior
+                                                                  4. Reporte mensual (sin gráficos)
+
+                                                                     * tabla de reps
+                                                                     * totales por incidencia
+                                                                     * total puntos
+                                                                     * top 3 y top 5
+                                                                     * pre-botón de exportar
+                                                                     5. Notificaciones
+
+                                                                        * top 3/5
+                                                                        * alertas persistentes
+                                                                        * botón campanita
+Entrega:
+ Sistema funcional, sin estilos pero mostrando todo correctamente.
+________________
+
+
+FASE 4 — Estética y UX mínima
+Objetivo: Hacer que no se vea como un PDF de 1997.
+Tareas:
+                                                                        * aplicar colores: blanco, negro, rojo (tu paleta oficial)
+                                                                        * cards con bordes redondeados
+                                                                        * tablas legibles
+                                                                        * spacing consistente
+                                                                        * header fijo
+                                                                        * modal centrado
+                                                                        * botones claramente diferenciados
+(No se usa Glassmorphism porque tú mismo dijiste que lo dejamos para otra versión).
+________________
+
+
+FASE 5 — Funciones avanzadas
+                                                                        1. Exportación Excel (openpyxl en backend o JS libs)
+                                                                        2. Alertas dinámicas (panel estilo bandeja)
+                                                                        3. Retroactividad automática (incidencias eliminadas por licencia/vacación)
+                                                                        4. Modo Supervisor vs Gerencia
+                                                                        * restricciones de edición
+                                                                        * soft delete vs hard delete
+                                                                        * override cierre
+________________
+
+
+FASE 6 — QA / Test Cases (sin código, solo lógica)
+Pruebas obligatorias:
+                                                                        * Día libre con swap
+                                                                        * Día libre sin swap
+                                                                        * Incidencia retroactiva antes del cierre
+                                                                        * Incidencia retroactiva después del cierre
+                                                                        * Vacaciones que solapan incidencias
+                                                                        * Licencias que anulan errores
+                                                                        * Doble turno
+                                                                        * Top 3 puntos
+                                                                        * Top 5 incidencias
+                                                                        * Semana con mixtos
+                                                                        * Semana sin mixtos
+                                                                        * Guardar planificación
+                                                                        * Cambiar turno permanentemente
+________________
+
+
+FASE 7 — Estabilización
+                                                                        * limpieza de código
+                                                                        * auditoría final
+                                                                        * generación de versión 1.0
+                                                                        * backup automático JSON
+________________
+
+
+FASE 8 — Opcionales futuros
+                                                                        * Glassmorphism mode
+                                                                        * Autenticación real
+                                                                        * Migración a React
+                                                                        * Migración a Firebase Firestore
+                                                                        * Dashboard para gerencia
+                                                                        * Modo oscuro
+                                                                        * API REST
+________________
+
+
+RESULTADO ESPERADO DEL ROADMAP
+Siguiendo este roadmap NO vuelves a tener:
+                                                                        * un HTML pasta de spaghetti
+                                                                        * una IA improvisando módulos inexistentes
+                                                                        * un Gemini metiendo Next.js sin pedir permiso
+                                                                        * un “Frankenstein” Beta 1.8
+                                                                        * validaciones contradictorias
+                                                                        * lógica duplicada
+________________
+
+
+
+
+React ver
+Puedes usar exactamente el mismo roadmap porque es agnóstico del framework. Pero si lo pasas a React, el nivel de orden sube drásticamente y se vuelve prácticamente imposible que armes otro Frankenstein, porque React ya te obliga a separar UI, lógica y estado.
+Aquí te dejo cómo se vería el MISMO roadmap, pero adaptado a un proyecto React profesional. Sin inventarme nada, sin cambiar nada de la lógica de la Biblia, solo ajustando la arquitectura.
+________________
+
+
+ROADMAP OFICIAL — CONTROL DE INCIDENCIAS (VERSIÓN REACT)
+Frontend moderno, arquitectura limpia, sin dependencias mágicas, sin Firebase metiendo sus manos.
+________________
+
+
+FASE 0 — Setup React
+Stack recomendado:
+                                                                        * Vite + React
+                                                                        * Zustand o Jotai para estado (opcional, pero te salva la vida)
+                                                                        * React Router (opcional pero muy recomendado)
+                                                                        * Tailwind (si quieres acelerar UI, si no, CSS normal)
+Estructura inicial:
+/src/
+│
+├── App.jsx
+├── main.jsx
+│
+├── assets/
+├── styles/
+│   └── main.css
+│
+├── core/
+│   ├── dataManager.js
+│   ├── calculations.js
+│   ├── validation.js
+│   ├── auditLog.js
+│   └── schemas.js
+│
+├── state/
+│   ├── useDB.js        // Zustand o equivalente
+│   ├── useMonth.js
+│   ├── usePlanning.js
+│   ├── useIncidents.js
+│   └── useUI.js
+│
+├── components/
+│   ├── layout/
+│   │    ├── Header.jsx
+│   │    └── Navigation.jsx
+│   ├── modals/
+│   │    ├── IncidentModal.jsx
+│   │    ├── HistoryModal.jsx
+│   │    └── PlanningModal.jsx
+│   ├── reports/
+│   │    └── MonthlyReport.jsx
+│   ├── planning/
+│   │    └── WeeklyPlanning.jsx
+│   ├── alerts/
+│   │    └── AlertsPanel.jsx
+│   └── day/
+│        └── DayDashboard.jsx
+│
+├── pages/
+│   ├── Today.jsx
+│   ├── Planning.jsx
+│   └── Reports.jsx
+└── utils/
+     ├── dates.js
+     ├── helpers.js
+     ├── export.js
+     └── id.js
+
+
+Nada raro. Nada superfluo. Todo donde debe estar.
+________________
+
+
+FASE 1 — Motor de datos en React
+El dataManager.js sigue siendo exactamente igual al del roadmap original porque React no toca tu lógica.
+React consume datos, no los inventa.
+Contiene:
+                                                                        * loadDB()
+                                                                        * saveDB()
+                                                                        * CRUDs de reps, incidencias, licencias, vacaciones, planning, shiftChanges
+                                                                        * schema del “mini backend local”
+Se monta en un store de Zustand (ejemplo: useDB()).
+________________
+
+
+FASE 2 — Estado global (la parte más importante en React)
+Aquí React se vuelve tu amigo y no tu enemigo:
+Stores recomendados:
+                                                                        1. useDB
+
+                                                                           * persistencia
+                                                                           * carga/guardado
+                                                                           * operaciones base del dataManager
+                                                                           2. usePlanning
+
+                                                                              * semana actual
+                                                                              * edición
+                                                                              * arrastrar semana anterior
+                                                                              3. useIncidents
+
+                                                                                 * incidencias del día
+                                                                                 * filtrado
+                                                                                 * agregar / editar / borrar
+                                                                                 * validación embebida
+                                                                                 4. useMonth
+
+                                                                                    * totales
+                                                                                    * top 3/5
+                                                                                    * alerts
+                                                                                    * cierre mensual
+                                                                                    * período de gracia
+                                                                                    5. useUI
+
+                                                                                       * estado de modales
+                                                                                       * notificaciones
+Esto elimina 90% del caos.
+________________
+
+
+FASE 3 — Componentes UI (React brilla aquí)
+Páginas:
+                                                                                       * Today.jsx
+                                                                                       * Planning.jsx
+                                                                                       * Reports.jsx
+Cada una solo coordina componentes.
+Componentes:
+DayDashboard.jsx
+                                                                                       * muestra incidencias del día
+                                                                                       * muestra turnos
+                                                                                       * botón “Registrar incidencia”
+IncidentModal.jsx
+                                                                                       * formulario completo
+                                                                                       * validación en tiempo real
+                                                                                       * acción dispatch a useIncidents
+WeeklyPlanning.jsx
+                                                                                       * edición de horario semanal
+                                                                                       * turnos: día, noche, mixto
+                                                                                       * swap, cover, excepciones
+AlertsPanel.jsx
+                                                                                       * alertas persistentes
+                                                                                       * top 3/5
+                                                                                       * resets si cambia estado
+MonthlyReport.jsx
+                                                                                       * totales
+                                                                                       * gráficos opcionales
+                                                                                       * exportar Excel
+________________
+
+
+FASE 4 — UX y estilos
+Aquí decides: Tailwind → velocidad
+CSS plain → control total
+Elementos:
+                                                                                       * tarjetas
+                                                                                       * tablas
+                                                                                       * modal animado
+                                                                                       * navegación clara
+                                                                                       * cabecera fija
+                                                                                       * responsive simple
+________________
+
+
+FASE 5 — Funcionalidades avanzadas
+Idéntico al roadmap original:
+                                                                                       * exportar Excel
+                                                                                       * retroactividad por licencia/vacación
+                                                                                       * alertas configurables
+                                                                                       * perfiles Supervisor vs Gerencia
+                                                                                       * respaldo JSON
+                                                                                       * auditoría interna
+React solo da estructura.
+La lógica es la Biblia.
+________________
+
+
+FASE 6 — Pruebas
+                                                                                       * componente por componente
+                                                                                       * reglas de planificación
+                                                                                       * validaciones de día libre
+                                                                                       * casos límite del cierre mensual
+                                                                                       * top 3/5 con empates
+                                                                                       * swaps complejos
+                                                                                       * licencias retroactivas
+                                                                                       * planificación mensual por semanas
+________________
+
+
+FASE 7 — Versión final
+                                                                                       * limpieza del código
+                                                                                       * documentación
+                                                                                       * SPEC.md actualizado
+                                                                                       * release 1.0
+________________
+
+
+VENTAJAS DE USAR REACT PARA ESTE PROYECTO
+Brutalmente directo:
+                                                                                       * Evitas el caos del HTML monolítico.
+                                                                                       * Cada parte vive en su módulo.
+                                                                                       * No hay modales zombis perdidos en 3000 líneas.
+                                                                                       * No hay “Gemini decidiendo que ahora es Next.js”.
+                                                                                       * No hay sobreescrituras misteriosas.
+                                                                                       * No hay que andar moviendo <script> arriba y abajo.
+                                                                                       * No hay pérdida de memoria del modelo porque la lógica está en módulos pequeños y separados.
+                                                                                       * Es más fácil testear.
+                                                                                       * Es más fácil traer Copilot para completar partes sin que destruya otras.
+En resumen:
+La Biblia te da el cerebro.
+React te da el esqueleto.
+Tú solo ensamblas.
+________________
+
+
+Si quieres, puedo convertirte la Biblia entera a un SPEC React-friendly para pegarla como referencia en tu repo.
